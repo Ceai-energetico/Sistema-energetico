@@ -152,8 +152,8 @@ def init_demo(session):
     # Crear sede ejemplo usando datos del Excel adjunto
     sede = Sede(
         regional="Ejemplo Regional",
-        centro="Centro Demo",
-        nombre="Sede Demo",
+        centro="",
+        nombre="Usos Finales de Energia 087",
         direccion="Calle Falsa 123",
         ciudad="Ciudad Ejemplo",
         fecha_revision=str(datetime.now().date()),
@@ -690,8 +690,8 @@ def init_demo(session):
     # Crear sede ejemplo usando datos del Excel adjunto
     sede = Sede(
         regional="Ejemplo Regional",
-        centro="Centro Demo",
-        nombre="Sede Demo",
+        centro="",
+        nombre="Usos Finales de Energia 087",
         direccion="Calle Falsa 123",
         ciudad="Ciudad Ejemplo",
         fecha_revision=str(datetime.now().date()),
