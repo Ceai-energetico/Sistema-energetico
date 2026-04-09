@@ -166,6 +166,35 @@ function RevisionEnergetica088({ sede, onBack }) {
     setRevision(prev => ({ ...prev, [field]: JSON.stringify(value) }));
   };
 
+  const downloadCanvasImage = (canvas, fileName, type = 'image/png') => {
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL(type);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const exportChartImages = (format = 'png') => {
+    const charts = [
+      { id: 'grafico-curva-088', name: 'curva' },
+      { id: 'grafico-matriz-energia', name: 'matriz_energia' },
+      { id: 'grafico-matriz-costo', name: 'matriz_costo' },
+      { id: 'grafico-pareto-electrica', name: 'pareto_electrica' },
+      { id: 'grafico-pareto-gas', name: 'pareto_gas' },
+      { id: 'grafico-pareto-acpm', name: 'pareto_acpm' },
+      { id: 'grafico-pareto-gasolina', name: 'pareto_gasolina' },
+    ];
+    const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+    charts.forEach(chart => {
+      const canvas = document.getElementById(chart.id);
+      if (canvas) {
+        downloadCanvasImage(canvas, `revision088_${chart.name}.${format}`, mime);
+      }
+    });
+  };
+
   const regimen = safeJsonParse(revision?.regimen_trabajo, {});
   const actividades = safeJsonParse(revision?.actividades, {});
   const curva = safeJsonParse(revision?.curva_carga_088, []);
@@ -231,6 +260,8 @@ function RevisionEnergetica088({ sede, onBack }) {
       const ctx = el.getContext('2d');
       const labels = normalizedCurva.map((d, index) => d.hora || index + 1);
       const values = normalizedCurva.map(d => Number(d.potencia || 0));
+      const maxPower = Math.max(1, ...values);
+      const displaySchedule = scheduleActiveCounts.some(v => v > 0);
       curvaChartRef.current = new Chart(ctx, {
         type: 'line',
         data: {
@@ -240,24 +271,57 @@ function RevisionEnergetica088({ sede, onBack }) {
               label: 'Potencia (kW)',
               data: values,
               borderColor: '#0B7D4B',
-              backgroundColor: 'rgba(11, 125, 75, 0.16)',
-              tension: 0.3,
+              backgroundColor: 'rgba(11, 125, 75, 0.18)',
+              tension: 0.35,
               fill: true,
-              pointRadius: 4,
+              pointRadius: 3,
               pointBackgroundColor: '#0B7D4B',
               borderWidth: 2,
               spanGaps: true,
-            }
+            },
+            ...(displaySchedule ? [{
+              label: 'Horas activas',
+              data: scheduleActiveCounts,
+              borderColor: '#1ab66f',
+              backgroundColor: 'rgba(26, 182, 111, 0.12)',
+              tension: 0.35,
+              fill: false,
+              pointRadius: 2,
+              borderDash: [5, 5],
+              yAxisID: 'y1',
+            }] : []),
           ],
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { position: 'bottom' } },
+          maintainAspectRatio: true,
+          aspectRatio: 2.4,
+          layout: { padding: { top: 12, bottom: 8, left: 0, right: 0 } },
+          interaction: { mode: 'nearest', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 14, padding: 16 } },
+            tooltip: { enabled: true },
+          },
           scales: {
-            x: { title: { display: true, text: 'Hora del día' } },
-            y: { beginAtZero: true, title: { display: true, text: 'Potencia (kW)' } },
+            x: {
+              title: { display: true, text: 'Hora del día' },
+              grid: { color: 'rgba(0,0,0,0.05)' },
+            },
+            y: {
+              beginAtZero: true,
+              suggestedMax: Math.ceil(maxPower * 1.2 * 10) / 10,
+              title: { display: true, text: 'Potencia (kW)' },
+              grid: { color: 'rgba(0,0,0,0.05)' },
+            },
+            y1: {
+              display: displaySchedule,
+              beginAtZero: true,
+              max: 8,
+              ticks: { stepSize: 1 },
+              position: 'right',
+              title: { display: true, text: 'Horas activas' },
+              grid: { drawOnChartArea: false },
+            },
           },
         },
       });
@@ -265,7 +329,7 @@ function RevisionEnergetica088({ sede, onBack }) {
       console.error('Error crear gráfico curva:', e);
     }
     return () => { if (curvaChartRef.current) curvaChartRef.current.destroy(); };
-  }, [curva]);
+  }, [curva, scheduleActiveCounts]);
 
   useEffect(() => {
     if (activeTab !== 'matriz') return;
@@ -274,24 +338,28 @@ function RevisionEnergetica088({ sede, onBack }) {
     try {
       const energyEl = document.getElementById('grafico-matriz-energia');
       const costEl = document.getElementById('grafico-matriz-costo');
+      const energyData = [matrixTotals.electrica, matrixTotals.gas, matrixTotals.acpm, matrixTotals.gasolina];
+      const costData = [matrixTotals.electricaCost, matrixTotals.gasCost, matrixTotals.acpmCost, matrixTotals.gasolinaCost];
       if (energyEl && !matrizSinDatos) {
         matrizEnergyChartRef.current = new Chart(energyEl.getContext('2d'), {
           type: 'doughnut',
           data: {
             labels: ['Energía eléctrica', 'Gas natural', 'ACPM', 'Gasolina'],
             datasets: [{
-              data: [matrixTotals.electrica, matrixTotals.gas, matrixTotals.acpm, matrixTotals.gasolina],
+              label: 'Consumo energético',
+              data: energyData,
               backgroundColor: ['#0B7D4B', '#1ab66f', '#ff9f1c', '#3c8dbc'],
-              borderColor: '#ffffff',
+              borderColor: '#fff',
               borderWidth: 2,
             }],
           },
           options: {
-            responsive: false,
-            maintainAspectRatio: false,
-            animation: false,
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            cutout: '52%',
             plugins: {
-              legend: { position: 'bottom' },
+              legend: { position: 'bottom', labels: { boxWidth: 14, padding: 12 } },
               tooltip: {
                 callbacks: {
                   label: context => `${context.label}: ${context.parsed || 0}`,
@@ -307,18 +375,20 @@ function RevisionEnergetica088({ sede, onBack }) {
           data: {
             labels: ['Energía eléctrica', 'Gas natural', 'ACPM', 'Gasolina'],
             datasets: [{
-              data: [matrixTotals.electricaCost, matrixTotals.gasCost, matrixTotals.acpmCost, matrixTotals.gasolinaCost],
+              label: 'Costo energético',
+              data: costData,
               backgroundColor: ['#0B7D4B', '#1ab66f', '#ff9f1c', '#3c8dbc'],
-              borderColor: '#ffffff',
+              borderColor: '#fff',
               borderWidth: 2,
             }],
           },
           options: {
-            responsive: false,
-            maintainAspectRatio: false,
-            animation: false,
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.6,
+            cutout: '52%',
             plugins: {
-              legend: { position: 'bottom' },
+              legend: { position: 'bottom', labels: { boxWidth: 14, padding: 12 } },
               tooltip: {
                 callbacks: {
                   label: context => `${context.label}: ${context.parsed || 0}`,
@@ -353,6 +423,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               label: 'Consumo estimado',
               data: data.map(item => item.consumo),
               backgroundColor: '#0B7D4B',
+              maxBarThickness: 32,
+              barPercentage: 0.7,
             },
             {
               type: 'line',
@@ -364,12 +436,14 @@ function RevisionEnergetica088({ sede, onBack }) {
               tension: 0.3,
               fill: false,
               pointRadius: 4,
+              borderWidth: 2,
             },
           ],
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true,
+          aspectRatio: 2.1,
           scales: {
             y: { beginAtZero: true, title: { display: true, text: 'Consumo estimado' } },
             y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Acumulado (%)' }, grid: { drawOnChartArea: false }, max: 100 },
@@ -435,12 +509,23 @@ function RevisionEnergetica088({ sede, onBack }) {
   return (
     <div className="revision-088-container">
       <div className="revision-header">
-        <button className="btn btn-secondary" onClick={onBack}>← Volver</button>
-        <h2>📋 Revisión Energética 088</h2>
-        <div style={{ flex: 1 }}></div>
-        <button className="btn btn-secondary" onClick={exportRevisionExcel}>⬇️ Exportar Excel</button>
-        <button className="btn btn-primary" onClick={guardar}>💾 Guardar</button>
-        {lastSaved && <div style={{ fontSize: 12, color: '#fff' }}>Guardado: {lastSaved}</div>}
+        <div className="revision-header__info">
+          <div className="revision-header__logo">SENA</div>
+          <div>
+            <button className="btn btn-secondary" onClick={onBack}>← Volver</button>
+          </div>
+          <div className="revision-header__titles">
+            <h2>Aplicativo Revisión Energética</h2>
+            <p>Laboratorio de Servicios Tecnológicos CEAI</p>
+          </div>
+        </div>
+        <div className="revision-header-actions">
+          <button className="btn btn-secondary" onClick={exportRevisionExcel}>⬇️ Exportar Excel</button>
+          <button className="btn btn-secondary" onClick={() => exportChartImages('png')}>🖼️ Exportar PNG</button>
+          <button className="btn btn-secondary" onClick={() => exportChartImages('jpg')}>🖼️ Exportar JPG</button>
+          <button className="btn btn-primary" onClick={guardar}>💾 Guardar</button>
+          {lastSaved && <div className="revision-header__saved">Guardado: {lastSaved}</div>}
+        </div>
       </div>
 
       <div className="tabs-revision">
@@ -527,7 +612,8 @@ function RevisionEnergetica088({ sede, onBack }) {
       {activeTab === 'curva' && (
         <section className="card">
           <h3>1.2 Régimen de trabajo y curva de carga</h3>
-          <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8, marginBottom: 16, minHeight: 340 }}>
+          <div className="chart-panel" style={{ minHeight: 340 }}>
+            <h4>Curva de carga</h4>
             <canvas id="grafico-curva-088" height="300"></canvas>
           </div>
           <div className="form-section">
@@ -643,15 +729,15 @@ function RevisionEnergetica088({ sede, onBack }) {
           </div>
 
           <div className="form-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, minHeight: 280 }}>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, minHeight: 260, height: 300 }}>
+            <div className="chart-panel">
               <h4>Matriz energética</h4>
-              <canvas id="grafico-matriz-energia" height="220" style={{ width: '100%', height: '100%' }}></canvas>
-              {matrizSinDatos && <div style={{ color: '#777', fontSize: 13, marginTop: 14 }}>Agrega datos en la matriz para ver el gráfico.</div>}
+              <canvas id="grafico-matriz-energia" height="220"></canvas>
+              {matrizSinDatos && <div className="chart-empty">Agrega datos en la matriz para ver el gráfico.</div>}
             </div>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, minHeight: 260, height: 300 }}>
+            <div className="chart-panel">
               <h4>Matriz de costo energético</h4>
-              <canvas id="grafico-matriz-costo" height="220" style={{ width: '100%', height: '100%' }}></canvas>
-              {matrizSinDatos && <div style={{ color: '#777', fontSize: 13, marginTop: 14 }}>Agrega datos en la matriz para ver el gráfico.</div>}
+              <canvas id="grafico-matriz-costo" height="220"></canvas>
+              {matrizSinDatos && <div className="chart-empty">Agrega datos en la matriz para ver el gráfico.</div>}
             </div>
           </div>
           {matrizSinDatos && (
@@ -679,7 +765,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_energia_electrica', [...usos.electrica, defaultUsoRow()])}>+ Agregar uso eléctrico</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260 }}>
+            <div className="chart-panel" style={{ marginTop: 16, minHeight: 280 }}>
+              <h4>Gráfico Pareto - Eléctrica</h4>
               <canvas id="grafico-pareto-electrica" height="220"></canvas>
             </div>
           </div>
@@ -697,7 +784,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_gas_natural', [...usos.gas, defaultUsoRow()])}>+ Agregar uso gas natural</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260 }}>
+            <div className="chart-panel" style={{ marginTop: 16, minHeight: 280 }}>
+              <h4>Gráfico Pareto - Gas natural</h4>
               <canvas id="grafico-pareto-gas" height="220"></canvas>
             </div>
           </div>
@@ -715,7 +803,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_acpm', [...usos.acpm, defaultUsoRow()])}>+ Agregar uso ACPM</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260 }}>
+            <div className="chart-panel" style={{ marginTop: 16, minHeight: 280 }}>
+              <h4>Gráfico Pareto - ACPM</h4>
               <canvas id="grafico-pareto-acpm" height="220"></canvas>
             </div>
           </div>
@@ -733,7 +822,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_gasolina', [...usos.gasolina, defaultUsoRow()])}>+ Agregar uso gasolina</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260 }}>
+            <div className="chart-panel" style={{ marginTop: 16, minHeight: 280 }}>
+              <h4>Gráfico Pareto - Gasolina</h4>
               <canvas id="grafico-pareto-gasolina" height="220"></canvas>
             </div>
           </div>
