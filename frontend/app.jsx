@@ -177,7 +177,10 @@ function Header(){
     <header className="header">
       <div className="brand">
         <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" />
-        <div className="brand-text">Laboratorio de Servicios Tecnológicos</div>
+        <div className="brand-text-container">
+          <div className="brand-text-main">Aplicativo Revisión Energética</div>
+          <div className="brand-text-sub">Laboratorio de Servicios Tecnológicos CEAI</div>
+        </div>
       </div>
     </header>
   )
