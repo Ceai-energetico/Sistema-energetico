@@ -381,6 +381,12 @@ body {
   padding: 24px;
 }
 
+.revision-088-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* TABLE */
 .table {
   width: 100%;
@@ -897,6 +903,261 @@ body {
   font-size: 13px;
   font-weight: 500;
 }
+
+/* REVISIÓN ENERGÉTICA 088 */
+.revision-088-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.revision-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, var(--sena-dark), var(--sena-main));
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(11, 125, 75, 0.2);
+}
+
+.revision-header h2 {
+  margin: 0;
+  flex: 1;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.tabs-revision {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: rgba(26, 182, 111, 0.05);
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.tab-btn {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(26, 182, 111, 0.2);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.tab-btn:hover {
+  background: rgba(26, 182, 111, 0.1);
+  border-color: var(--sena-main);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--sena-dark), var(--sena-main));
+  color: #fff;
+  border-color: var(--sena-main);
+  box-shadow: 0 6px 16px rgba(11, 125, 75, 0.25);
+}
+
+.usage-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .detail-cards {
+    flex-wrap: wrap;
+  }
+  
+  .detail-cards > * {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 200px;
+  }
+  
+  .charts {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 250px;
+    padding: 20px 12px;
+  }
+  
+  .content {
+    padding: 16px;
+  }
+  
+  .modal {
+    padding: 20px;
+    width: 95%;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .inventory-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .inventory-filters {
+    flex-direction: column;
+  }
+  
+  .filter-group {
+    min-width: unset;
+  }
+  
+  .detail-cards {
+    flex-direction: column;
+  }
+  
+  .detail-cards > * {
+    flex: 1;
+    min-width: unset;
+  }
+  
+  .info-card {
+    flex: 1;
+    min-width: unset;
+  }
+  
+  .table {
+    font-size: 12px;
+  }
+  
+  .table th,
+  .table td {
+    padding: 10px 8px;
+  }
+  
+  .table-actions {
+    flex-wrap: wrap;
+  }
+  
+  .btn-edit, .btn-delete {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .consolidado-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .btn {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+  
+  .tabs-revision {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 200px;
+    padding: 16px 10px;
+  }
+  
+  .header {
+    padding: 0 16px;
+  }
+  
+  .sena-logo-img {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .brand-text {
+    font-size: 14px;
+  }
+  
+  .content {
+    padding: 12px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+  
+  .modal {
+    padding: 16px;
+  }
+  
+  .modal h2 {
+    font-size: 18px;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .consolidado-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-cards {
+    gap: 8px;
+  }
+  
+  .form-section {
+    margin-top: 12px;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .inventario-filters {
+    gap: 8px;
+  }
+  
+  .filter-group input,
+  .filter-group select {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .info-value {
+    font-size: 20px;
+  }
+  
+  .btn {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+  
+  .revision-header h2 {
+    font-size: 16px;
+  }
+}
+
 
 /* SCROLLBAR */
 ::-webkit-scrollbar {

@@ -137,6 +137,56 @@ class Oportunidad(Base):
 
     sede = relationship("Sede", back_populates="oportunidades")
 
+class RevisionEnergetica088(Base):
+    __tablename__ = 'revisiones_energeticas_088'
+    id = Column(Integer, primary_key=True, index=True)
+    sede_id = Column(Integer, ForeignKey('sedes.id'))
+    
+    # 1. Información General
+    fecha = Column(String, default="")
+    regional = Column(String, default="")
+    centro_formacion = Column(String, default="")
+    sede_nombre = Column(String, default="")
+    direccion = Column(String, default="")
+    ciudad = Column(String, default="")
+    area_total_m2 = Column(Float, default=0.0)
+    area_util_m2 = Column(Float, default=0.0)
+    temp_promedio_c = Column(Float, default=0.0)
+    vel_viento_kmh = Column(Float, default=0.0)
+    radiacion_solar_kwh_m2_dia = Column(Float, default=0.0)
+    ano_construccion = Column(Integer, nullable=True)
+    sede_comparte = Column(String, default="")
+    propiedad_sede = Column(String, default="")
+    num_trabajadores = Column(Integer, default=0)
+    num_aprendices = Column(Integer, default=0)
+    num_visitantes = Column(Integer, default=0)
+    tiene_renovables = Column(String, default="")
+    tipos_renovables = Column(String, default="")
+    generacion_producida_kwh_anio = Column(Float, default=0.0)
+    
+    # 1.2 Régimen de trabajo (JSON con horarios por día)
+    regimen_trabajo = Column(String, default='{}')
+    
+    # 1.3 Actividades (JSON con checkboxes)
+    actividades = Column(String, default='{}')
+    
+    # 2.1 Curva de carga (JSON con datos)
+    curva_carga_088 = Column(String, default='[]')
+    
+    # 3.1 Usos significativos de energía (JSON)
+    usos_energia_electrica = Column(String, default='[]')
+    usos_gas_natural = Column(String, default='[]')
+    usos_acpm = Column(String, default='[]')
+    usos_gasolina = Column(String, default='[]')
+    matriz_energetica = Column(String, default='[]')
+    
+    # 3.2 Caracterización de usos significativos
+    caracterizacion_usos = Column(String, default='[]')
+    
+    # Metadata
+    fecha_creacion = Column(String, default="")
+    fecha_modificacion = Column(String, default="")
+
 # Create tables
 Base.metadata.create_all(bind=ENGINE)
 
@@ -178,6 +228,19 @@ def ensure_inventario_schema(engine):
                 conn.execute(text(f"ALTER TABLE inventario ADD COLUMN {col} {col_def}"))
 
 ensure_inventario_schema(ENGINE)
+
+
+def ensure_revision088_schema(engine):
+    required = {
+        'matriz_energetica': 'TEXT DEFAULT "[]"',
+    }
+    with engine.connect() as conn:
+        existing = [r[1] for r in conn.execute(text("PRAGMA table_info(revisiones_energeticas_088)"))]
+        for col, col_def in required.items():
+            if col not in existing:
+                conn.execute(text(f"ALTER TABLE revisiones_energeticas_088 ADD COLUMN {col} {col_def}"))
+
+ensure_revision088_schema(ENGINE)
 
 # FastAPI app
 app = FastAPI(title="Sistema Energetico - API")
@@ -375,6 +438,44 @@ class InventarioItemOut(InventarioItemBase):
     potencia_total_kw: float = 0.0
     consumo_mensual_kwh: float = 0.0
 
+    class Config:
+        from_attributes = True
+
+class RevisionEnergetica088In(BaseModel):
+    fecha: str = ""
+    regional: str = ""
+    centro_formacion: str = ""
+    sede_nombre: str = ""
+    direccion: str = ""
+    ciudad: str = ""
+    area_total_m2: float = 0.0
+    area_util_m2: float = 0.0
+    temp_promedio_c: float = 0.0
+    vel_viento_kmh: float = 0.0
+    radiacion_solar_kwh_m2_dia: float = 0.0
+    ano_construccion: Optional[int] = None
+    sede_comparte: str = ""
+    propiedad_sede: str = ""
+    num_trabajadores: int = 0
+    num_aprendices: int = 0
+    num_visitantes: int = 0
+    tiene_renovables: str = ""
+    tipos_renovables: str = ""
+    generacion_producida_kwh_anio: float = 0.0
+    regimen_trabajo: str = "{}"
+    actividades: str = "{}"
+    curva_carga_088: str = "[]"
+    matriz_energetica: str = "[]"
+    usos_energia_electrica: str = "[]"
+    usos_gas_natural: str = "[]"
+    usos_acpm: str = "[]"
+    usos_gasolina: str = "[]"
+    caracterizacion_usos: str = "[]"
+
+class RevisionEnergetica088Out(RevisionEnergetica088In):
+    id: int
+    sede_id: int
+    
     class Config:
         from_attributes = True
 
@@ -619,6 +720,101 @@ def consolidado_sede(sede_id: int):
             total += consumo
         detalle = [{'categoria': k, 'consumo_kwh': v} for k, v in per_category.items()]
         return {'total_consumo_kwh': total, 'por_categoria': detalle}
+    finally:
+        session.close()
+
+# Endpoints para Revisión Energética 088
+@app.post('/api/sedes/{sede_id}/revision088', response_model=RevisionEnergetica088Out)
+def create_revision088(sede_id: int, payload: RevisionEnergetica088In):
+    session = SessionLocal()
+    try:
+        s = session.query(Sede).filter(Sede.id == sede_id).first()
+        if not s:
+            raise HTTPException(status_code=404, detail='Sede no encontrada')
+        data = payload.dict()
+        data['sede_id'] = sede_id
+        data['fecha_creacion'] = str(datetime.now())
+        data['fecha_modificacion'] = str(datetime.now())
+        rev = RevisionEnergetica088(**data)
+        session.add(rev)
+        session.commit()
+        session.refresh(rev)
+        return rev
+    finally:
+        session.close()
+
+@app.get('/api/sedes/{sede_id}/revision088')
+def get_revision088(sede_id: int):
+    session = SessionLocal()
+    try:
+        rev = session.query(RevisionEnergetica088).filter(RevisionEnergetica088.sede_id == sede_id).first()
+        if not rev:
+            # Return empty/default revision
+            return {
+                'id': None,
+                'sede_id': sede_id,
+                'fecha': '',
+                'regional': '',
+                'centro_formacion': '',
+                'sede_nombre': '',
+                'direccion': '',
+                'ciudad': '',
+                'area_total_m2': 0.0,
+                'area_util_m2': 0.0,
+                'temp_promedio_c': 0.0,
+                'vel_viento_kmh': 0.0,
+                'radiacion_solar_kwh_m2_dia': 0.0,
+                'ano_construccion': None,
+                'sede_comparte': '',
+                'propiedad_sede': '',
+                'num_trabajadores': 0,
+                'num_aprendices': 0,
+                'num_visitantes': 0,
+                'tiene_renovables': '',
+                'tipos_renovables': '',
+                'generacion_producida_kwh_anio': 0.0,
+                'regimen_trabajo': '{}',
+                'actividades': '{}',
+                'curva_carga_088': '[]',
+                'usos_energia_electrica': '[]',
+                'usos_gas_natural': '[]',
+                'usos_acpm': '[]',
+                'usos_gasolina': '[]',
+                'matriz_energetica': '[]',
+                'caracterizacion_usos': '[]',
+            }
+        return rev
+    finally:
+        session.close()
+
+@app.put('/api/revision088/{rev_id}', response_model=RevisionEnergetica088Out)
+def update_revision088(rev_id: int, payload: RevisionEnergetica088In):
+    session = SessionLocal()
+    try:
+        rev = session.query(RevisionEnergetica088).filter(RevisionEnergetica088.id == rev_id).first()
+        if not rev:
+            raise HTTPException(status_code=404, detail='Revisión 088 no encontrada')
+        data = payload.dict()
+        data['fecha_modificacion'] = str(datetime.now())
+        for k, v in data.items():
+            if hasattr(rev, k):
+                setattr(rev, k, v)
+        session.commit()
+        session.refresh(rev)
+        return rev
+    finally:
+        session.close()
+
+@app.delete('/api/revision088/{rev_id}')
+def delete_revision088(rev_id: int):
+    session = SessionLocal()
+    try:
+        rev = session.query(RevisionEnergetica088).filter(RevisionEnergetica088.id == rev_id).first()
+        if not rev:
+            raise HTTPException(status_code=404, detail='Revisión 088 no encontrada')
+        session.delete(rev)
+        session.commit()
+        return {'ok': True}
     finally:
         session.close()
 

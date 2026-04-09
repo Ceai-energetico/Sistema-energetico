@@ -183,7 +183,7 @@ function Header(){
   )
 }
 
-function Sidebar({sedes, selectedId, onSelect}){
+function Sidebar({sedes, selectedId, onSelect, activeView, onViewChange}){
   return (
     <aside className="sidebar">
       <ul>
@@ -194,6 +194,11 @@ function Sidebar({sedes, selectedId, onSelect}){
             </button>
           </li>
         ))}
+        <li style={{marginTop:16,paddingTop:16,borderTop:'1px solid rgba(255,255,255,0.1)'}}>
+          <button className={`sede-btn revision-btn ${activeView === 'revision088' ? 'active' : ''}`} onClick={()=>onViewChange('revision088')}>
+            <div className="sede-name">📋 Revisión Energética 088</div>
+          </button>
+        </li>
       </ul>
     </aside>
   )
@@ -819,6 +824,7 @@ function App(){
   const [sedes, setSedes] = useState([]);
   const [sede, setSede] = useState(null);
   const [error, setError] = useState(null);
+  const [activeView, setActiveView] = useState('detail'); // 'detail' o 'revision088'
 
   useEffect(()=>{
     fetch('/api/sedes')
@@ -835,7 +841,7 @@ function App(){
       });
   },[]);
 
-  // auto select first sede when sedes load
+  // auto select first sede cuando sedes carguen
   useEffect(()=>{
     if(sedes && sedes.length > 0 && !sede){
       handleSelect(sedes[0].id);
@@ -843,6 +849,7 @@ function App(){
   }, [sedes]);
 
   function handleSelect(id){
+    setActiveView('detail'); // Volver a vista detail cuando se selecciona sede
     fetch(`/api/sedes/${id}`)
       .then(r=>{
         if(!r.ok) throw new Error('Sede no encontrada');
@@ -861,10 +868,11 @@ function App(){
     <div className="app">
       <Header />
       <div className="main">
-        <Sidebar sedes={sedes} selectedId={sede?.id} sede={sede} onSelect={handleSelect} />
+        <Sidebar sedes={sedes} selectedId={sede?.id} sede={sede} onSelect={handleSelect} activeView={activeView} onViewChange={setActiveView} />
         <div className="content">
           {error && <div className="card" style={{background:'#fff3f3', borderLeft:'4px solid #d32f2f', color:'#7a1616'}}>⚠️ {error}</div>}
-          <Detail sede={sede} onReload={handleSelect} />
+          {activeView === 'detail' && <Detail sede={sede} onReload={handleSelect} />}
+          {activeView === 'revision088' && <RevisionEnergetica088 sede={sede} onBack={() => setActiveView('detail')} />}
         </div>
       </div>
       <footer className="footer">
