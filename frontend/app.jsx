@@ -177,35 +177,24 @@ function Header(){
     <header className="header">
       <div className="brand">
         <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" />
-        <div className="brand-text">Sede Cali · Sistema Energético</div>
+        <div className="brand-text">Laboratorio de Servicios Tecnológicos</div>
       </div>
     </header>
   )
 }
 
-function Sidebar({sedes, selectedId, sede, onSelect}){
+function Sidebar({sedes, selectedId, onSelect}){
   return (
     <aside className="sidebar">
-      <h3>⚡ Sedes</h3>
       <ul>
         {Array.isArray(sedes) && sedes.map(s => (
           <li key={s.id}>
             <button className={`sede-btn ${selectedId===s.id ? 'active' : ''}`} onClick={()=>onSelect(s.id)}>
-              <div className="sede-name">{s.nombre}</div>
-              <div className="sede-centro">{s.centro}</div>
+              <div className="sede-name">{s.nombre === 'Sede Demo' ? 'Uso finales de energia 087' : s.nombre}</div>
             </button>
           </li>
         ))}
       </ul>
-
-      {sede && (
-        <div className="sede-card">
-          <div className="sede-card-title">📌 Detalles</div>
-          <div className="sede-card-row"><strong>Ciudad:</strong> {sede.ciudad}</div>
-          {sede.direccion && <div className="sede-card-row"><strong>Dirección:</strong> {sede.direccion}</div>}
-          <div className="sede-card-row"><strong>Revisión:</strong> {sede.fecha_revision}</div>
-        </div>
-      )}
     </aside>
   )
 }
@@ -549,10 +538,6 @@ function Detail({sede, onReload}){
   return (
     <div className="detail">
       <div className="detail-header">
-        <div>
-          <h2>{sede.nombre}</h2>
-          <div className="muted">{sede.centro} · {sede.ciudad}</div>
-        </div>
         <div className="detail-cards">
           <InfoCard title="Total (36m) kWh" value={formatNumber(total_kwh)} small={`Promedio mensual: ${formatNumber(promedio)} kWh`} />
           <InfoCard title="Temp. promedio (°C)" value={formatNumber(sede.temp_promedio)} />
@@ -578,17 +563,6 @@ function Detail({sede, onReload}){
           </div>
         </section>
       )}
-
-      <section className="charts">
-        <div className="card">
-          <h3>Curva de carga (día representativo)</h3>
-          <CurvaChart data={curva} />
-        </div>
-        <div className="card">
-          <h3>Matriz energética (36 meses)</h3>
-          <MatrizChart data={consumos} />
-        </div>
-      </section>
 
       <section className="card">
         <div className="inventory-header">
@@ -834,27 +808,6 @@ function Detail({sede, onReload}){
           </div>
         ) : (
           <div className="empty">⏳ Cargando consolidado energético...</div>
-        )}
-      </section>
-
-      <section className="card">
-        <h3>💡 Oportunidades de Mejora</h3>
-        {oportunidades.length > 0 ? (
-          <div className="opp-grid">
-            {oportunidades.map((o, idx)=> (
-              <div className="opp" key={idx}>
-                <div className="opp-type">⭐ {o.tipo}</div>
-                <div className="opp-desc">{o.descripcion}</div>
-                <div className="opp-meta">
-                  💾 Ahorro: <strong>{formatNumber(o.potencial_ahorro)} kWh</strong><br/>
-                  💰 Beneficio: <strong>{formatNumber(o.potencial_ahorro_cop)} COP</strong><br/>
-                  ⏱️ Retorno: <strong>{formatNumber(o.retorno_anios)} años</strong>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty">📭 No hay oportunidades registradas aún</div>
         )}
       </section>
 
