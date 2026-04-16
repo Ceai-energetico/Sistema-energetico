@@ -3,6 +3,7 @@ const { useState, useEffect, useRef } = ReactHooks;
 
 const semana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo','Festivo'];
 const regimenSlots = ['00:00-02:00','02:01-04:00','04:01-06:00','06:01-08:00','08:01-10:00','10:01-12:00','12:01-14:00','14:01-16:00','16:01-18:00','18:01-20:00','20:01-22:00','22:01-24:00'];
+const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function safeJsonParse(raw, fallback) {
   if (raw === null || raw === undefined || raw === '') return fallback;
@@ -164,6 +165,42 @@ function RevisionEnergetica088({ sede, onBack }) {
         setLoading(false);
       });
   }, [sede?.id]);
+
+  // Auto-guardar cuando cambien los usos
+  useEffect(() => {
+    if (!revision || !revision.id) return;
+    
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        const payload = {
+          ...revision,
+          regimen_trabajo: revision.regimen_trabajo ? JSON.stringify(safeJsonParse(revision.regimen_trabajo, {})) : '{}',
+          actividades: revision.actividades ? JSON.stringify(safeJsonParse(revision.actividades, {})) : '{}',
+          curva_carga_088: revision.curva_carga_088 ? JSON.stringify(safeJsonParse(revision.curva_carga_088, [])) : '[]',
+          matriz_energetica: revision.matriz_energetica ? JSON.stringify(safeJsonParse(revision.matriz_energetica, [])) : '[]',
+          usos_energia_electrica: revision.usos_energia_electrica ? JSON.stringify(safeJsonParse(revision.usos_energia_electrica, [])) : '[]',
+          usos_gas_natural: revision.usos_gas_natural ? JSON.stringify(safeJsonParse(revision.usos_gas_natural, [])) : '[]',
+          usos_acpm: revision.usos_acpm ? JSON.stringify(safeJsonParse(revision.usos_acpm, [])) : '[]',
+          usos_gasolina: revision.usos_gasolina ? JSON.stringify(safeJsonParse(revision.usos_gasolina, [])) : '[]',
+          caracterizacion_usos: revision.caracterizacion_usos ? JSON.stringify(safeJsonParse(revision.caracterizacion_usos, [])) : '[]',
+        };
+
+        const res = await fetch(`/api/revision088/${revision.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        
+        if (res.ok) {
+          setLastSaved(new Date().toLocaleTimeString('es-ES'));
+        }
+      } catch (e) {
+        console.error('Error en auto-guardado:', e);
+      }
+    }, 1000);
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [revision?.usos_energia_electrica, revision?.usos_gas_natural, revision?.usos_acpm, revision?.usos_gasolina, revision?.fecha, revision?.regional, revision?.centro_formacion, revision?.sede_nombre, revision?.direccion, revision?.ciudad, revision?.area_total_m2, revision?.area_util_m2, revision?.temp_promedio_c, revision?.vel_viento_kmh, revision?.radiacion_solar_kwh_m2_dia, revision?.ano_construccion, revision?.sede_comparte, revision?.propiedad_sede, revision?.num_trabajadores, revision?.num_aprendices, revision?.num_visitantes, revision?.tiene_renovables, revision?.tipos_renovables, revision?.generacion_producida_kwh_anio, revision?.regimen_trabajo, revision?.actividades, revision?.curva_carga_088, revision?.matriz_energetica, revision?.caracterizacion_usos]);
 
   const updateField = (field, value) => {
     setRevision(prev => ({ ...prev, [field]: value }));
@@ -348,60 +385,111 @@ function RevisionEnergetica088({ sede, onBack }) {
       const costEl = document.getElementById('grafico-matriz-costo');
       const energyData = [matrixTotals.electrica, matrixTotals.gas, matrixTotals.acpm, matrixTotals.gasolina];
       const costData = [matrixTotals.electricaCost, matrixTotals.gasCost, matrixTotals.acpmCost, matrixTotals.gasolinaCost];
+      const colors = ['#0B7D4B', '#1ab66f', '#ff9f1c', '#3c8dbc'];
+      
       if (energyEl && !matrizSinDatos) {
         matrizEnergyChartRef.current = new Chart(energyEl.getContext('2d'), {
-          type: 'bar',
+          type: 'doughnut',
           data: {
             labels: ['Eléctrica', 'Gas natural', 'ACPM', 'Gasolina'],
             datasets: [{
-              label: 'Consumo energético',
               data: energyData,
-              backgroundColor: ['#0B7D4B', '#1ab66f', '#ff9f1c', '#3c8dbc'],
-              borderRadius: 12,
-              maxBarThickness: 24,
-              borderSkipped: false,
+              backgroundColor: colors,
+              borderColor: '#ffffff',
+              borderWidth: 2.5,
             }],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: false,
+            animation: { duration: 600 },
             plugins: {
-              legend: { display: true, position: 'bottom', labels: { boxWidth: 14, padding: 16, font: { size: 12, weight: 600 } } },
-              tooltip: { enabled: true, backgroundColor: 'rgba(0,0,0,0.8)', padding: 12, titleFont: { size: 13, weight: 600 }, bodyFont: { size: 12 }, callbacks: { label: context => `${context.label}: ${context.parsed.y.toFixed(2)}` } },
-            },
-            scales: {
-              x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-              y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
+              legend: { 
+                position: 'bottom', 
+                labels: { 
+                  boxWidth: 12, 
+                  padding: 14, 
+                  font: { size: 12, weight: 600 },
+                  generateLabels: function(chart) {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      fillStyle: colors[i],
+                      hidden: false,
+                      index: i
+                    }));
+                  }
+                } 
+              },
+              tooltip: { 
+                enabled: true, 
+                backgroundColor: 'rgba(0,0,0,0.85)', 
+                padding: 12, 
+                titleFont: { size: 13, weight: 600 }, 
+                bodyFont: { size: 12 },
+                callbacks: { 
+                  label: context => {
+                    const total = energyData.reduce((a, b) => a + b, 0);
+                    const value = context.parsed;
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                    return `${context.label}: ${value.toFixed(2)} (${percentage}%)`;
+                  }
+                }
+              },
             },
           },
         });
       }
+      
       if (costEl && !matrizSinDatos) {
         matrizCostChartRef.current = new Chart(costEl.getContext('2d'), {
-          type: 'bar',
+          type: 'doughnut',
           data: {
             labels: ['Eléctrica', 'Gas natural', 'ACPM', 'Gasolina'],
             datasets: [{
-              label: 'Costo energético',
               data: costData,
-              backgroundColor: ['#0B7D4B', '#1ab66f', '#ff9f1c', '#3c8dbc'],
-              borderRadius: 12,
-              maxBarThickness: 24,
-              borderSkipped: false,
+              backgroundColor: colors,
+              borderColor: '#ffffff',
+              borderWidth: 2.5,
             }],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            animation: false,
+            animation: { duration: 600 },
             plugins: {
-              legend: { display: true, position: 'bottom', labels: { boxWidth: 14, padding: 16, font: { size: 12, weight: 600 } } },
-              tooltip: { enabled: true, backgroundColor: 'rgba(0,0,0,0.8)', padding: 12, titleFont: { size: 13, weight: 600 }, bodyFont: { size: 12 }, callbacks: { label: context => `${context.label}: $${context.parsed.y.toFixed(0)}` } },
-            },
-            scales: {
-              x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-              y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
+              legend: { 
+                position: 'bottom', 
+                labels: { 
+                  boxWidth: 12, 
+                  padding: 14, 
+                  font: { size: 12, weight: 600 },
+                  generateLabels: function(chart) {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      fillStyle: colors[i],
+                      hidden: false,
+                      index: i
+                    }));
+                  }
+                } 
+              },
+              tooltip: { 
+                enabled: true, 
+                backgroundColor: 'rgba(0,0,0,0.85)', 
+                padding: 12, 
+                titleFont: { size: 13, weight: 600 }, 
+                bodyFont: { size: 12 },
+                callbacks: { 
+                  label: context => {
+                    const total = costData.reduce((a, b) => a + b, 0);
+                    const value = context.parsed;
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                    return `${context.label}: $${value.toFixed(0)} (${percentage}%)`;
+                  }
+                }
+              },
             },
           },
         });
@@ -421,45 +509,145 @@ function RevisionEnergetica088({ sede, onBack }) {
     if (!el) return;
     if (paretoChartRefs[category].current) paretoChartRefs[category].current.destroy();
     try {
+      const categoryLabels = {
+        electrica: 'Usos Significativos de energía eléctrica',
+        gas: 'Usos Significativos de gas natural',
+        acpm: 'Usos Significativos de ACPM',
+        gasolina: 'Usos Significativos de gasolina'
+      };
+      
       paretoChartRefs[category].current = new Chart(el.getContext('2d'), {
         type: 'bar',
         data: {
-          labels: data.map(item => item.label || 'Uso'),
+          labels: data.map(item => item.label),
           datasets: [
             {
               type: 'bar',
-              label: 'Consumo estimado',
+              label: 'Consumo mensual estimado (kWh/mes)',
               data: data.map(item => item.consumo),
-              backgroundColor: '#0B7D4B',
-              borderRadius: 8,
-              maxBarThickness: 20,
+              backgroundColor: '#4472C4',
+              borderRadius: 4,
+              borderSkipped: false,
+              maxBarThickness: 40,
+              yAxisID: 'y',
+              barPercentage: 0.7,
             },
             {
               type: 'line',
-              label: 'Acumulado %',
+              label: 'Acumulado (%)',
               data: data.map(item => item.acumulado),
-              borderColor: '#ff9f1c',
-              backgroundColor: 'rgba(255,159,28,0.12)',
+              borderColor: '#FF6B35',
+              backgroundColor: 'transparent',
               yAxisID: 'y1',
-              tension: 0.3,
+              tension: 0.4,
               fill: false,
-              pointRadius: 4,
-              borderWidth: 2.5,
+              pointRadius: 6,
+              pointBackgroundColor: '#FF6B35',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2.5,
+              borderWidth: 3,
+              pointHoverRadius: 8,
+              datalabels: {
+                display: true,
+              }
             },
           ],
         },
         options: {
+          indexAxis: undefined,
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: {
+              top: 30,
+            }
+          },
           plugins: { 
-            legend: { position: 'bottom', labels: { boxWidth: 14, padding: 16, font: { size: 12, weight: 600 } } },
-            tooltip: { enabled: true, backgroundColor: 'rgba(0,0,0,0.8)', padding: 12, titleFont: { size: 13, weight: 600 }, bodyFont: { size: 12 } },
+            title: {
+              display: true,
+              text: categoryLabels[category],
+              font: { size: 14, weight: 'bold' },
+              padding: { bottom: 20 }
+            },
+            legend: { 
+              position: 'bottom', 
+              labels: { 
+                boxWidth: 15, 
+                padding: 20, 
+                font: { size: 12, weight: 500 },
+                usePointStyle: false,
+              } 
+            },
+            tooltip: { 
+              enabled: true, 
+              backgroundColor: 'rgba(0,0,0,0.85)', 
+              padding: 12, 
+              titleFont: { size: 13, weight: 600 }, 
+              bodyFont: { size: 12 },
+              callbacks: {
+                label: context => {
+                  if (context.datasetIndex === 0) {
+                    return `Consumo: ${context.parsed.y.toFixed(1)} kWh/mes`;
+                  } else {
+                    return `Acumulado: ${context.parsed.y.toFixed(1)}%`;
+                  }
+                }
+              }
+            },
           },
           scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'Consumo estimado', font: { size: 12, weight: 600 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-            y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Acumulado (%)', font: { size: 12, weight: 600 } }, grid: { drawOnChartArea: false }, max: 100 },
+            x: { 
+              title: { display: true, text: 'Usos finales de energía', font: { size: 12, weight: 600 } },
+              grid: { display: false, drawBorder: true },
+              ticks: { font: { size: 11, weight: 500 } }
+            },
+            y: { 
+              type: 'linear',
+              position: 'left',
+              beginAtZero: true, 
+              title: { display: true, text: 'Consumo mensual estimado (kWh/mes)', font: { size: 12, weight: 600 } }, 
+              grid: { color: 'rgba(0,0,0,0.1)', drawBorder: true },
+              ticks: { font: { size: 11 } }
+            },
+            y1: { 
+              type: 'linear',
+              position: 'right', 
+              beginAtZero: true,
+              max: 100,
+              title: { display: true, text: '%', font: { size: 12, weight: 600 } }, 
+              grid: { drawOnChartArea: false, drawBorder: true },
+              ticks: { 
+                font: { size: 11 }, 
+                callback: function(value) { 
+                  return value + '%'; 
+                },
+                stepSize: 20
+              }
+            },
           },
         },
+        plugins: [{
+          id: 'datalabels',
+          afterDatasetsDraw(chart) {
+            const { ctx, data, chartArea: { left, right, top, bottom, width, height } } = chart;
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+              if (datasetIndex === 1) {
+                const yScale = chart.scales[dataset.yAxisID];
+                const meta = chart.getDatasetMeta(datasetIndex);
+                meta.data.forEach((elem, index) => {
+                  const data = dataset.data[index];
+                  const label = `${Math.round(data)}%`;
+                  const x = elem.x;
+                  const y = elem.y - 15;
+                  ctx.fillStyle = '#FF6B35';
+                  ctx.font = 'bold 12px Arial';
+                  ctx.textAlign = 'center';
+                  ctx.fillText(label, x, y);
+                });
+              }
+            });
+          }
+        }]
       });
     } catch (e) {
       console.error(`Error crear gráfico Pareto ${category}:`, e);
@@ -723,7 +911,7 @@ function RevisionEnergetica088({ sede, onBack }) {
                 <tbody>
                   {matriz.map((row, index) => (
                     <tr key={index}>
-                      <td><input className="form-group" value={row.fecha || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], fecha: e.target.value }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><select className="form-group" value={row.fecha || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], fecha: e.target.value }; updateJsonField('matriz_energetica', next); }} style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '13px' }}><option value="">Seleccionar mes</option>{meses.map((mes, i) => <option key={i} value={mes}>{mes}</option>)}</select></td>
                       <td><input className="form-group" type="number" step="0.1" value={row.electrica_kwh || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_kwh: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
                       <td><input className="form-group" type="number" step="100" value={row.electrica_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
                       <td><input className="form-group" type="number" step="0.1" value={row.gas_m3 || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gas_m3: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
@@ -754,16 +942,20 @@ function RevisionEnergetica088({ sede, onBack }) {
             </div>
           </div>
 
-          <div className="form-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, minHeight: 280 }}>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, minHeight: 260, height: 300, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <h4>Matriz energética</h4>
-              <canvas id="grafico-matriz-energia" height="220" style={{ width: '100%', height: '100%' }}></canvas>
-              {matrizSinDatos && <div style={{ color: '#777', fontSize: 13, marginTop: 14 }}>Agrega datos en la matriz para ver el gráfico.</div>}
+          <div className="form-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 20 }}>
+            <div style={{ background: 'linear-gradient(135deg, #f8faf9 0%, #f0f7f4 100%)', padding: 20, borderRadius: 14, minHeight: 350, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '1px solid rgba(11, 125, 75, 0.1)' }}>
+              <h4 style={{ marginBottom: 16, color: '#0B7D4B', fontWeight: 700, fontSize: 15 }}>Matriz energética</h4>
+              <div style={{ position: 'relative', height: 280 }}>
+                <canvas id="grafico-matriz-energia" height="220"></canvas>
+              </div>
+              {matrizSinDatos && <div style={{ color: '#777', fontSize: 13, marginTop: 14, textAlign: 'center' }}>Agrega datos en la matriz para ver el gráfico.</div>}
             </div>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, minHeight: 260, height: 300, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <h4>Matriz de costo energético</h4>
-              <canvas id="grafico-matriz-costo" height="220" style={{ width: '100%', height: '100%' }}></canvas>
-              {matrizSinDatos && <div style={{ color: '#777', fontSize: 13, marginTop: 14 }}>Agrega datos en la matriz para ver el gráfico.</div>}
+            <div style={{ background: 'linear-gradient(135deg, #f8faf9 0%, #f0f7f4 100%)', padding: 20, borderRadius: 14, minHeight: 350, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '1px solid rgba(11, 125, 75, 0.1)' }}>
+              <h4 style={{ marginBottom: 16, color: '#0B7D4B', fontWeight: 700, fontSize: 15 }}>Matriz de costo energético</h4>
+              <div style={{ position: 'relative', height: 280 }}>
+                <canvas id="grafico-matriz-costo" height="220"></canvas>
+              </div>
+              {matrizSinDatos && <div style={{ color: '#777', fontSize: 13, marginTop: 14, textAlign: 'center' }}>Agrega datos en la matriz para ver el gráfico.</div>}
             </div>
           </div>
           {matrizSinDatos && (
@@ -791,8 +983,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_energia_electrica', [...usos.electrica, defaultUsoRow()])}>+ Agregar uso eléctrico</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <canvas id="grafico-pareto-electrica" height="220"></canvas>
+            <div style={{ background: 'linear-gradient(135deg, #f8faf9 0%, #f0f7f4 100%)', padding: 20, borderRadius: 14, marginTop: 20, minHeight: 340, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '1px solid rgba(11, 125, 75, 0.1)' }}>
+              <canvas id="grafico-pareto-electrica" height="280"></canvas>
             </div>
           </div>
 
@@ -809,8 +1001,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_gas_natural', [...usos.gas, defaultUsoRow()])}>+ Agregar uso gas natural</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <canvas id="grafico-pareto-gas" height="220"></canvas>
+            <div style={{ background: 'linear-gradient(135deg, #f8faf9 0%, #f0f7f4 100%)', padding: 20, borderRadius: 14, marginTop: 20, minHeight: 340, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '1px solid rgba(11, 125, 75, 0.1)' }}>
+              <canvas id="grafico-pareto-gas" height="280"></canvas>
             </div>
           </div>
 
@@ -827,8 +1019,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_acpm', [...usos.acpm, defaultUsoRow()])}>+ Agregar uso ACPM</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <canvas id="grafico-pareto-acpm" height="220"></canvas>
+            <div style={{ background: 'linear-gradient(135deg, #f8faf9 0%, #f0f7f4 100%)', padding: 20, borderRadius: 14, marginTop: 20, minHeight: 340, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '1px solid rgba(11, 125, 75, 0.1)' }}>
+              <canvas id="grafico-pareto-acpm" height="280"></canvas>
             </div>
           </div>
 
@@ -845,8 +1037,8 @@ function RevisionEnergetica088({ sede, onBack }) {
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_gasolina', [...usos.gasolina, defaultUsoRow()])}>+ Agregar uso gasolina</button>
-            <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginTop: 16, minHeight: 260, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <canvas id="grafico-pareto-gasolina" height="220"></canvas>
+            <div style={{ background: 'linear-gradient(135deg, #f8faf9 0%, #f0f7f4 100%)', padding: 20, borderRadius: 14, marginTop: 20, minHeight: 340, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', border: '1px solid rgba(11, 125, 75, 0.1)' }}>
+              <canvas id="grafico-pareto-gasolina" height="280"></canvas>
             </div>
           </div>
 
