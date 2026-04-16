@@ -174,12 +174,12 @@ function readImageAsDataUrl(file) {
 
 function Header(){
   return (
-    <header className="header">
-      <div className="brand">
-        <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" />
-        <div className="brand-text-container">
-          <div className="brand-text-main">Aplicativo Revisión Energética</div>
-          <div className="brand-text-sub">Laboratorio de Servicios Tecnológicos CEAI</div>
+    <header className="header" style={{ background: 'linear-gradient(135deg, #0B7D4B 0%, #1ab66f 100%)', boxShadow: '0 8px 32px rgba(11, 125, 75, 0.15)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+      <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '24px', padding: '20px 32px' }}>
+        <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: '70px', height: '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} />
+        <div className="brand-text-container" style={{ flex: 1 }}>
+          <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}>⚡ Aplicativo Revisión Energética</div>
+          <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}>🔬 Laboratorio de Servicios Tecnológicos CEAI</div>
         </div>
       </div>
     </header>
@@ -188,21 +188,96 @@ function Header(){
 
 function Sidebar({sedes, selectedId, onSelect, activeView, onViewChange}){
   return (
-    <aside className="sidebar">
-      <ul>
-        {Array.isArray(sedes) && sedes.map(s => (
-          <li key={s.id}>
-            <button className={`sede-btn ${selectedId===s.id ? 'active' : ''}`} onClick={()=>onSelect(s.id)}>
-              <div className="sede-name">{s.nombre === 'Sede Demo' ? 'Uso finales de energia 087' : s.nombre}</div>
-            </button>
-          </li>
-        ))}
-        <li style={{marginTop:16,paddingTop:16,borderTop:'1px solid rgba(255,255,255,0.1)'}}>
-          <button className={`sede-btn revision-btn ${activeView === 'revision088' ? 'active' : ''}`} onClick={()=>onViewChange('revision088')}>
-            <div className="sede-name">📋 Revisión Energética 088</div>
-          </button>
-        </li>
-      </ul>
+    <aside className="sidebar" style={{ background: 'linear-gradient(180deg, #0B7D4B 0%, #0a5f3a 100%)', padding: '24px 16px', boxShadow: '2px 0 16px rgba(0,0,0,0.1)' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <div style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '16px', paddingLeft: '12px' }}>📊 Revisiones</div>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {Array.isArray(sedes) && sedes.map(s => (
+            <li key={s.id} style={{ marginBottom: '12px' }}>
+              <button 
+                className={`sede-btn ${selectedId===s.id ? 'active' : ''}`}
+                onClick={()=>onSelect(s.id)}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  border: 'none',
+                  borderRadius: '10px',
+                  backgroundColor: selectedId===s.id ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  color: '#ffffff',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  borderLeft: selectedId===s.id ? '3px solid #fff' : '3px solid transparent',
+                  paddingLeft: selectedId===s.id ? '13px' : '16px',
+                  boxShadow: selectedId===s.id ? 'inset 0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                  background: selectedId===s.id ? 'rgba(255,255,255,0.12)' : 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  if(selectedId!==s.id) {
+                    e.target.style.backgroundColor = 'rgba(255,255,255,0.08)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if(selectedId!==s.id) {
+                    e.target.style.backgroundColor = 'transparent';
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '16px' }}>📋</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>{s.nombre === 'Sede Demo' ? '087' : s.nombre.split(' ')[0]}</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>{s.nombre === 'Sede Demo' ? 'Usos finales de energía' : 'Sede'}</div>
+                  </div>
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '24px' }}>
+        <div style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '16px', paddingLeft: '12px' }}>🔍 Herramientas</div>
+        <button 
+          className={`sede-btn revision-btn ${activeView === 'revision088' ? 'active' : ''}`}
+          onClick={()=>onViewChange('revision088')}
+          style={{
+            width: '100%',
+            padding: '16px 16px',
+            border: 'none',
+            borderRadius: '10px',
+            background: activeView === 'revision088' ? 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%)' : 'transparent',
+            color: '#ffffff',
+            fontWeight: '700',
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            borderLeft: activeView === 'revision088' ? '3px solid #fff' : '3px solid transparent',
+            paddingLeft: activeView === 'revision088' ? '13px' : '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            boxShadow: activeView === 'revision088' ? 'inset 0 2px 8px rgba(0,0,0,0.2)' : 'none'
+          }}
+          onMouseEnter={(e) => {
+            if(activeView!=='revision088') {
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if(activeView!=='revision088') {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>⚙️</span>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '13px', fontWeight: '700' }}>Revisión 088</div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>Formulario completo</div>
+          </div>
+        </button>
+      </div>
     </aside>
   )
 }
