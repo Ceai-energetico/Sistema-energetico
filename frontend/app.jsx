@@ -110,29 +110,29 @@ const FORM_SCHEMAS = {
 
 const FIELD_META = {
   hoja_tipo: { label: 'Categoría / Hoja' },
-  grupo_principal: { label: 'Grupo principal' },
-  descripcion: { label: 'Descripción del elemento', placeholder: 'Ej: UPS, router, etc.' },
-  marca: { label: 'Marca' },
-  modelo: { label: 'Modelo' },
-  fabricante: { label: 'Fabricante' },
-  proveedor: { label: 'Proveedor' },
-  clasificacion_energetica: { label: 'Clasificación energética según estándar RETIQ' },
-  ano_instalacion: { label: 'Año de instalación en la sede', type: 'number' },
-  cantidad: { label: 'Cantidad', type: 'number' },
-  horas_uso_diario: { label: 'Cantidad de horas de uso estimadas diaria', type: 'number', step: 0.5 },
-  dias_uso_mes: { label: 'Cantidad de días de uso al mes', type: 'number', step: 1 },
-  potencia_kw: { label: 'Potencia de un equipo kW', type: 'number', step: 0.01 },
-  valor_unitario: { label: 'Valor Unitario', type: 'number', step: 100 },
-  tipo_combustible: { label: 'Tipo de combustible / gas' },
-  refrigerante: { label: 'Refrigerante' },
-  capacidad_gas_kg: { label: 'Capacidad del gas en Kg', type: 'number', step: 0.01 },
-  total_gas_kg: { label: 'Total gas refrigerante en Kg', type: 'number', step: 0.01 },
-  capacidad_gas_gr: { label: 'Cantidad de refrigerante en gr', type: 'number', step: 1 },
-  consumo_combustible_gal: { label: 'Consumo combustible mes galones', type: 'number', step: 0.1 },
-  consumo_gas_m3: { label: 'Consumo total de gas mes m3', type: 'number', step: 0.1 },
-  ubicacion: { label: 'Ubicación', type: 'text' },
-  uso: { label: 'Uso', type: 'text' },
-  observaciones: { label: 'Observación', type: 'textarea' },
+  grupo_principal: { label: 'Grupo principal', placeholder: 'Ej: Equipos de TIC, Maquinaria industrial, Climatización, etc.' },
+  descripcion: { label: 'Descripción del elemento', placeholder: 'Ej: UPS, router, servidor, compresor, etc.' },
+  marca: { label: 'Marca', placeholder: 'Ej: Dell, HP, Schneider, ABB, etc.' },
+  modelo: { label: 'Modelo', placeholder: 'Ej: ThinkCentre M90, ProDesk 600, SCL-500, etc.' },
+  fabricante: { label: 'Fabricante', placeholder: 'Ej: Dell, HP, Siemens, Eaton, etc.' },
+  proveedor: { label: 'Proveedor', placeholder: 'Ej: Distribuidor local, OEM, Almacén XYZ, etc.' },
+  clasificacion_energetica: { label: 'Clasificación energética según estándar RETIQ', placeholder: 'Ej: A, A+, B, etc.' },
+  ano_instalacion: { label: 'Año de instalación en la sede', type: 'number', placeholder: '2023' },
+  cantidad: { label: 'Cantidad', type: 'number', placeholder: '1' },
+  horas_uso_diario: { label: 'Cantidad de horas de uso estimadas diaria', type: 'number', step: 0.5, placeholder: '8' },
+  dias_uso_mes: { label: 'Cantidad de días de uso al mes', type: 'number', step: 1, placeholder: '20' },
+  potencia_kw: { label: 'Potencia de un equipo kW', type: 'number', step: 0.01, placeholder: '2.5' },
+  valor_unitario: { label: 'Valor Unitario', type: 'number', step: 100, placeholder: '1500000' },
+  tipo_combustible: { label: 'Tipo de combustible / gas', placeholder: 'Ej: Gasolina, Diesel, Gas natural, GLP, etc.' },
+  refrigerante: { label: 'Refrigerante', placeholder: 'Ej: R-410A, R-22, R-404A, etc.' },
+  capacidad_gas_kg: { label: 'Capacidad del gas en Kg', type: 'number', step: 0.01, placeholder: '5' },
+  total_gas_kg: { label: 'Total gas refrigerante en Kg', type: 'number', step: 0.01, placeholder: '10' },
+  capacidad_gas_gr: { label: 'Cantidad de refrigerante en gr', type: 'number', step: 1, placeholder: '500' },
+  consumo_combustible_gal: { label: 'Consumo combustible mes galones', type: 'number', step: 0.1, placeholder: '50' },
+  consumo_gas_m3: { label: 'Consumo total de gas mes m3', type: 'number', step: 0.1, placeholder: '100' },
+  ubicacion: { label: 'Ubicación', type: 'text', placeholder: 'Ej: Sala de servidores, Oficina 101, Planta 2, etc.' },
+  uso: { label: 'Uso', type: 'text', placeholder: 'Ej: Almacenamiento de datos, Oficina, Producción, Refrigeración, etc.' },
+  observaciones: { label: 'Observación', type: 'textarea', placeholder: 'Ej: Equipo en buen estado, requiere mantenimiento mensual, etc.' },
   evidencias: { label: 'Evidencia fotográfica', type: 'files' },
 };
 
@@ -545,13 +545,6 @@ function Detail({sede, onReload}){
 
   return (
     <div className="detail">
-      <div className="detail-header">
-        <div className="detail-cards">
-          <InfoCard title="Total (36m) kWh" value={formatNumber(total_kwh)} small={`Promedio mensual: ${formatNumber(promedio)} kWh`} />
-          <InfoCard title="Temp. promedio (°C)" value={formatNumber(sede.temp_promedio)} />
-          <InfoCard title="Radiación (kWh/m²día)" value={formatNumber(sede.radiacion_solar)} />
-        </div>
-      </div>
       {consolidado && (
         <section className="card">
           <h3>Consolidado energético (mensual)</h3>

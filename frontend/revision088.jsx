@@ -255,12 +255,19 @@ function RevisionEnergetica088({ sede, onBack }) {
   };
   const caracterizacion = safeJsonParse(revision?.caracterizacion_usos, []);
 
-  const scheduleActiveCounts = regimenSlots.map(slot => {
+  const scheduleActiveCountsBySlot = regimenSlots.map(slot => {
     return semana.reduce((count, day) => {
       const value = (regimen[day] || {})[slot];
       return count + (value ? 1 : 0);
     }, 0);
   });
+
+  // Expandir de 12 slots a 24 horas (cada slot representa 2 horas)
+  const scheduleActiveCounts = [];
+  for (let i = 0; i < 24; i++) {
+    const slotIndex = Math.floor(i / 2);
+    scheduleActiveCounts.push(scheduleActiveCountsBySlot[slotIndex] || 0);
+  }
 
   const matrixTotals = {
     electrica: matriz.reduce((sum, row) => sum + Number(row.electrica_kwh || 0), 0),
@@ -701,6 +708,63 @@ function RevisionEnergetica088({ sede, onBack }) {
     }
   }
 
+  // Funciones para limpiar secciones con doble confirmación
+  const handleClearGeneral = () => {
+    if (!confirm('¿Estás seguro que deseas limpiar toda la sección General?')) return;
+    if (!confirm('Se eliminarán todos los datos. ¿Deseas continuar?')) return;
+    setRevision(prev => ({
+      ...prev,
+      fecha: '',
+      regional: '',
+      centro_formacion: '',
+      sede_nombre: '',
+      direccion: '',
+      ciudad: '',
+      area_total_m2: 0,
+      area_util_m2: 0,
+      temp_promedio_c: 0,
+      vel_viento_kmh: 0,
+      radiacion_solar_kwh_m2_dia: 0,
+      ano_construccion: '',
+      sede_comparte: '',
+      propiedad_sede: '',
+      num_trabajadores: 0,
+      num_aprendices: 0,
+      num_visitantes: 0,
+      tiene_renovables: '',
+      tipos_renovables: '',
+      generacion_producida_kwh_anio: 0,
+    }));
+  };
+
+  const handleClearCurva = () => {
+    if (!confirm('¿Estás seguro que deseas limpiar la sección Régimen y curva?')) return;
+    if (!confirm('Se eliminarán todos los datos. ¿Deseas continuar?')) return;
+    updateJsonField('regimen_trabajo', {});
+    updateJsonField('curva_carga_088', []);
+  };
+
+  const handleClearActividades = () => {
+    if (!confirm('¿Estás seguro que deseas limpiar todas las Actividades?')) return;
+    if (!confirm('Se eliminará la selección. ¿Deseas continuar?')) return;
+    updateJsonField('actividades', {});
+  };
+
+  const handleClearMatriz = () => {
+    if (!confirm('¿Estás seguro que deseas limpiar la Matriz energética?')) return;
+    if (!confirm('Se eliminarán todos los registros. ¿Deseas continuar?')) return;
+    updateJsonField('matriz_energetica', []);
+  };
+
+  const handleClearUsos = () => {
+    if (!confirm('¿Estás seguro que deseas limpiar todos los Usos energéticos?')) return;
+    if (!confirm('Se eliminarán todos los registros. ¿Deseas continuar?')) return;
+    updateJsonField('usos_energia_electrica', []);
+    updateJsonField('usos_gas_natural', []);
+    updateJsonField('usos_acpm', []);
+    updateJsonField('usos_gasolina', []);
+  };
+
   if (loading) return <div className="empty">Cargando revisión 088...</div>;
   if (!revision) return <div className="empty">Error cargando datos</div>;
 
@@ -757,32 +821,35 @@ function RevisionEnergetica088({ sede, onBack }) {
 
       {activeTab === 'general' && (
         <section className="card">
-          <h3>1. Información General de la sede</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3>1. Información General de la sede</h3>
+            <button className="btn btn-delete" onClick={handleClearGeneral} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>🗑️ Limpiar</button>
+          </div>
           <div className="form-section">
             <h4>Información básica</h4>
             <div className="form-row">
               <div className="form-group"><label>Fecha</label><input type="date" value={revision.fecha || ''} onChange={e => updateField('fecha', e.target.value)} /></div>
-              <div className="form-group"><label>Regional</label><input value={revision.regional || ''} onChange={e => updateField('regional', e.target.value)} /></div>
-              <div className="form-group"><label>Centro de formación</label><input value={revision.centro_formacion || ''} onChange={e => updateField('centro_formacion', e.target.value)} /></div>
+              <div className="form-group"><label>Regional</label><input placeholder="Ej: Bogotá, Medellín, Cali" value={revision.regional || ''} onChange={e => updateField('regional', e.target.value)} /></div>
+              <div className="form-group"><label>Centro de formación</label><input placeholder="Ej: Centro CEAI, Centro de gestión" value={revision.centro_formacion || ''} onChange={e => updateField('centro_formacion', e.target.value)} /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Sede</label><input value={revision.sede_nombre || ''} onChange={e => updateField('sede_nombre', e.target.value)} /></div>
-              <div className="form-group"><label>Dirección</label><input value={revision.direccion || ''} onChange={e => updateField('direccion', e.target.value)} /></div>
-              <div className="form-group"><label>Ciudad</label><input value={revision.ciudad || ''} onChange={e => updateField('ciudad', e.target.value)} /></div>
+              <div className="form-group"><label>Sede</label><input placeholder="Ej: Sede principal, Sede Bogotá" value={revision.sede_nombre || ''} onChange={e => updateField('sede_nombre', e.target.value)} /></div>
+              <div className="form-group"><label>Dirección</label><input placeholder="Ej: Calle 10 #45-60" value={revision.direccion || ''} onChange={e => updateField('direccion', e.target.value)} /></div>
+              <div className="form-group"><label>Ciudad</label><input placeholder="Ej: Bogotá, D.C." value={revision.ciudad || ''} onChange={e => updateField('ciudad', e.target.value)} /></div>
             </div>
           </div>
 
           <div className="form-section">
             <h4>Datos físicos y climáticos</h4>
             <div className="form-row">
-              <div className="form-group"><label>Área total (m²)</label><input type="number" value={revision.area_total_m2 || ''} onChange={e => updateNumericField('area_total_m2', e.target.value)} /></div>
-              <div className="form-group"><label>Área útil (m²)</label><input type="number" value={revision.area_util_m2 || ''} onChange={e => updateNumericField('area_util_m2', e.target.value)} /></div>
-              <div className="form-group"><label>Temperatura promedio (°C)</label><input type="number" step="0.1" value={revision.temp_promedio_c || ''} onChange={e => updateNumericField('temp_promedio_c', e.target.value)} /></div>
+              <div className="form-group"><label>Área total (m²)</label><input type="number" placeholder="Ej: 2500" value={revision.area_total_m2 || ''} onChange={e => updateNumericField('area_total_m2', e.target.value)} /></div>
+              <div className="form-group"><label>Área útil (m²)</label><input type="number" placeholder="Ej: 2000" value={revision.area_util_m2 || ''} onChange={e => updateNumericField('area_util_m2', e.target.value)} /></div>
+              <div className="form-group"><label>Temperatura promedio (°C)</label><input type="number" step="0.1" placeholder="Ej: 25" value={revision.temp_promedio_c || ''} onChange={e => updateNumericField('temp_promedio_c', e.target.value)} /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Vel. viento (km/h)</label><input type="number" step="0.1" value={revision.vel_viento_kmh || ''} onChange={e => updateNumericField('vel_viento_kmh', e.target.value)} /></div>
-              <div className="form-group"><label>Radiación solar (kWh/m²día)</label><input type="number" step="0.1" value={revision.radiacion_solar_kwh_m2_dia || ''} onChange={e => updateNumericField('radiacion_solar_kwh_m2_dia', e.target.value)} /></div>
-              <div className="form-group"><label>Año de construcción</label><input type="number" value={revision.ano_construccion || ''} onChange={e => updateField('ano_construccion', e.target.value ? parseInt(e.target.value) : '')} /></div>
+              <div className="form-group"><label>Vel. viento (km/h)</label><input type="number" step="0.1" placeholder="Ej: 3.5" value={revision.vel_viento_kmh || ''} onChange={e => updateNumericField('vel_viento_kmh', e.target.value)} /></div>
+              <div className="form-group"><label>Radiación solar (kWh/m²día)</label><input type="number" step="0.1" placeholder="Ej: 4.5" value={revision.radiacion_solar_kwh_m2_dia || ''} onChange={e => updateNumericField('radiacion_solar_kwh_m2_dia', e.target.value)} /></div>
+              <div className="form-group"><label>Año de construcción</label><input type="number" placeholder="Ej: 2015" value={revision.ano_construccion || ''} onChange={e => updateField('ano_construccion', e.target.value ? parseInt(e.target.value) : '')} /></div>
             </div>
           </div>
 
@@ -791,16 +858,16 @@ function RevisionEnergetica088({ sede, onBack }) {
             <div className="form-row">
               <div className="form-group"><label>¿Sede comparte instalaciones?</label><select value={revision.sede_comparte || ''} onChange={e => updateField('sede_comparte', e.target.value)}><option value="">Seleccionar</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
               <div className="form-group"><label>Propiedad de la sede</label><input value={revision.propiedad_sede || ''} onChange={e => updateField('propiedad_sede', e.target.value)} placeholder="Propia / Arriendo / Comodato" /></div>
-              <div className="form-group"><label>Número de trabajadores</label><input type="number" value={revision.num_trabajadores || ''} onChange={e => updateNumericField('num_trabajadores', e.target.value)} /></div>
+              <div className="form-group"><label>Número de trabajadores</label><input type="number" placeholder="Ej: 45" value={revision.num_trabajadores || ''} onChange={e => updateNumericField('num_trabajadores', e.target.value)} /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Número de aprendices</label><input type="number" value={revision.num_aprendices || ''} onChange={e => updateNumericField('num_aprendices', e.target.value)} /></div>
-              <div className="form-group"><label>Número de visitantes</label><input type="number" value={revision.num_visitantes || ''} onChange={e => updateNumericField('num_visitantes', e.target.value)} /></div>
+              <div className="form-group"><label>Número de aprendices</label><input type="number" placeholder="Ej: 120" value={revision.num_aprendices || ''} onChange={e => updateNumericField('num_aprendices', e.target.value)} /></div>
+              <div className="form-group"><label>Número de visitantes</label><input type="number" placeholder="Ej: 50" value={revision.num_visitantes || ''} onChange={e => updateNumericField('num_visitantes', e.target.value)} /></div>
               <div className="form-group"><label>Cuenta con renovables</label><select value={revision.tiene_renovables || ''} onChange={e => updateField('tiene_renovables', e.target.value)}><option value="">Seleccionar</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label>Tipos de renovables</label><input value={revision.tipos_renovables || ''} onChange={e => updateField('tipos_renovables', e.target.value)} placeholder="Ej: Solar, Eólica" /></div>
-              <div className="form-group"><label>Generación anual (kWh/año)</label><input type="number" step="0.1" value={revision.generacion_producida_kwh_anio || ''} onChange={e => updateNumericField('generacion_producida_kwh_anio', e.target.value)} /></div>
+              <div className="form-group"><label>Generación anual (kWh/año)</label><input type="number" step="0.1" placeholder="Ej: 1200" value={revision.generacion_producida_kwh_anio || ''} onChange={e => updateNumericField('generacion_producida_kwh_anio', e.target.value)} /></div>
             </div>
           </div>
         </section>
@@ -809,7 +876,10 @@ function RevisionEnergetica088({ sede, onBack }) {
 
       {activeTab === 'actividades' && (
         <section className="card">
-          <h3>1.3 Actividades que se desarrollan</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3>1.3 Actividades que se desarrollan</h3>
+            <button className="btn btn-delete" onClick={handleClearActividades} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>🗑️ Limpiar</button>
+          </div>
           <div className="form-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 14 }}>
             {['Administrativas','Industriales','Agrícolas','Pecuarias','Gastronómicas','Laboratorios','Automotriz','Informática y/o diseño de software','Salud','Agroindustrial'].map(act => (
               <label key={act} className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -826,7 +896,10 @@ function RevisionEnergetica088({ sede, onBack }) {
 
       {activeTab === 'curva' && (
         <section className="card">
-          <h3>1.2 Régimen de trabajo y curva de carga</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3>1.2 Régimen de trabajo y curva de carga</h3>
+            <button className="btn btn-delete" onClick={handleClearCurva} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>🗑️ Limpiar</button>
+          </div>
           <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 12, marginBottom: 16, minHeight: 340, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <canvas id="grafico-curva-088" height="300"></canvas>
           </div>
@@ -871,7 +944,7 @@ function RevisionEnergetica088({ sede, onBack }) {
                 return (
                   <div key={index} className="form-group">
                     <label>{index + 1}:00</label>
-                    <input type="number" step="0.1" value={current.potencia || ''} onChange={e => {
+                    <input type="number" step="0.1" placeholder="kW" value={current.potencia || ''} onChange={e => {
                       const next = [...curva];
                       next[index] = { hora: index + 1, potencia: parseFloat(e.target.value) || 0 };
                       updateJsonField('curva_carga_088', next);
@@ -886,7 +959,10 @@ function RevisionEnergetica088({ sede, onBack }) {
 
       {activeTab === 'matriz' && (
         <section className="card">
-          <h3>2.2 Matriz energética</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3>2.2 Matriz energética</h3>
+            <button className="btn btn-delete" onClick={handleClearMatriz} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>🗑️ Limpiar</button>
+          </div>
           <div className="form-section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
               <h4>Registro mensual</h4>
@@ -912,15 +988,15 @@ function RevisionEnergetica088({ sede, onBack }) {
                   {matriz.map((row, index) => (
                     <tr key={index}>
                       <td><select className="form-group" value={row.fecha || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], fecha: e.target.value }; updateJsonField('matriz_energetica', next); }} style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '13px' }}><option value="">Seleccionar mes</option>{meses.map((mes, i) => <option key={i} value={mes}>{mes}</option>)}</select></td>
-                      <td><input className="form-group" type="number" step="0.1" value={row.electrica_kwh || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_kwh: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" value={row.electrica_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="0.1" value={row.gas_m3 || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gas_m3: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" value={row.gas_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gas_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="0.1" value={row.acpm_gal || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], acpm_gal: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" value={row.acpm_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], acpm_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="0.1" value={row.gasolina_gal || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gasolina_gal: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" value={row.gasolina_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gasolina_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><button className="btn btn-delete" onClick={() => { const next = [...matriz]; next.splice(index, 1); updateJsonField('matriz_energetica', next); }}>Eliminar</button></td>
+                      <td><input className="form-group" type="number" step="0.1" placeholder="kWh" value={row.electrica_kwh || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_kwh: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.electrica_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input className="form-group" type="number" step="0.1" placeholder="m³" value={row.gas_m3 || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gas_m3: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.gas_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gas_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input className="form-group" type="number" step="0.1" placeholder="gal" value={row.acpm_gal || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], acpm_gal: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.acpm_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], acpm_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input className="form-group" type="number" step="0.1" placeholder="gal" value={row.gasolina_gal || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gasolina_gal: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.gasolina_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gasolina_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><button className="btn btn-delete" onClick={() => { if (!confirm('¿Estás seguro que deseas eliminar este registro?')) return; if (!confirm('Se eliminará permanentemente. ¿Deseas continuar?')) return; const next = [...matriz]; next.splice(index, 1); updateJsonField('matriz_energetica', next); }}>Eliminar</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -968,18 +1044,21 @@ function RevisionEnergetica088({ sede, onBack }) {
 
       {activeTab === 'usos' && (
         <section className="card">
-          <h3>3. Usos significativos de la energía</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3>3. Usos significativos de la energía</h3>
+            <button className="btn btn-delete" onClick={handleClearUsos} style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>🗑️ Limpiar</button>
+          </div>
 
           <div className="form-section">
             <h4>Uso final de energía eléctrica</h4>
             {usos.electrica.map((item, index) => (
               <div key={index} style={{ background: '#f0f8ff', padding: 14, borderRadius: 12, marginBottom: 12 }}>
                 <div className="form-row">
-                  <div className="form-group"><label>Uso</label><input value={item.descripcion || ''} onChange={e => { const next = [...usos.electrica]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_energia_electrica', next); }} /></div>
-                  <div className="form-group"><label>Consumo mensual estimado (kWh/mes)</label><input type="number" step="0.1" value={item.consumo || ''} onChange={e => { const next = [...usos.electrica]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_energia_electrica', next); }} /></div>
-                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" value={item.participacion || ''} onChange={e => { const next = [...usos.electrica]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_energia_electrica', next); }} /></div>
+                  <div className="form-group"><label>Uso</label><input placeholder="Ej: Servidores, luminarias, aires, equipos de TIC" value={item.descripcion || ''} onChange={e => { const next = [...usos.electrica]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_energia_electrica', next); }} /></div>
+                  <div className="form-group"><label>Consumo mensual estimado (kWh/mes)</label><input type="number" step="0.1" placeholder="Ej: 1200" value={item.consumo || ''} onChange={e => { const next = [...usos.electrica]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_energia_electrica', next); }} /></div>
+                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" placeholder="Ej: 45" value={item.participacion || ''} onChange={e => { const next = [...usos.electrica]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_energia_electrica', next); }} /></div>
                 </div>
-                <button className="btn btn-delete" onClick={() => { const next = [...usos.electrica]; next.splice(index, 1); updateJsonField('usos_energia_electrica', next); }}>Eliminar</button>
+                <button className="btn btn-delete" onClick={() => { if (!confirm('¿Estás seguro que deseas eliminar este uso?')) return; if (!confirm('Se eliminará permanentemente. ¿Deseas continuar?')) return; const next = [...usos.electrica]; next.splice(index, 1); updateJsonField('usos_energia_electrica', next); }}>Eliminar</button>
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_energia_electrica', [...usos.electrica, defaultUsoRow()])}>+ Agregar uso eléctrico</button>
@@ -993,11 +1072,11 @@ function RevisionEnergetica088({ sede, onBack }) {
             {usos.gas.map((item, index) => (
               <div key={index} style={{ background: '#f0fff5', padding: 14, borderRadius: 12, marginBottom: 12 }}>
                 <div className="form-row">
-                  <div className="form-group"><label>Uso</label><input value={item.descripcion || ''} onChange={e => { const next = [...usos.gas]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_gas_natural', next); }} /></div>
-                  <div className="form-group"><label>Consumo mensual estimado (m³/mes)</label><input type="number" step="0.1" value={item.consumo || ''} onChange={e => { const next = [...usos.gas]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gas_natural', next); }} /></div>
-                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" value={item.participacion || ''} onChange={e => { const next = [...usos.gas]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gas_natural', next); }} /></div>
+                  <div className="form-group"><label>Uso</label><input placeholder="Ej: Calderas, calentamiento, cocinas" value={item.descripcion || ''} onChange={e => { const next = [...usos.gas]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_gas_natural', next); }} /></div>
+                  <div className="form-group"><label>Consumo mensual estimado (m³/mes)</label><input type="number" step="0.1" placeholder="Ej: 500" value={item.consumo || ''} onChange={e => { const next = [...usos.gas]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gas_natural', next); }} /></div>
+                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" placeholder="Ej: 60" value={item.participacion || ''} onChange={e => { const next = [...usos.gas]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gas_natural', next); }} /></div>
                 </div>
-                <button className="btn btn-delete" onClick={() => { const next = [...usos.gas]; next.splice(index, 1); updateJsonField('usos_gas_natural', next); }}>Eliminar</button>
+                <button className="btn btn-delete" onClick={() => { if (!confirm('¿Estás seguro que deseas eliminar este uso?')) return; if (!confirm('Se eliminará permanentemente. ¿Deseas continuar?')) return; const next = [...usos.gas]; next.splice(index, 1); updateJsonField('usos_gas_natural', next); }}>Eliminar</button>
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_gas_natural', [...usos.gas, defaultUsoRow()])}>+ Agregar uso gas natural</button>
@@ -1011,11 +1090,11 @@ function RevisionEnergetica088({ sede, onBack }) {
             {usos.acpm.map((item, index) => (
               <div key={index} style={{ background: '#fff8ec', padding: 14, borderRadius: 12, marginBottom: 12 }}>
                 <div className="form-row">
-                  <div className="form-group"><label>Uso</label><input value={item.descripcion || ''} onChange={e => { const next = [...usos.acpm]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_acpm', next); }} /></div>
-                  <div className="form-group"><label>Consumo mensual estimado (gal/mes)</label><input type="number" step="0.1" value={item.consumo || ''} onChange={e => { const next = [...usos.acpm]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_acpm', next); }} /></div>
-                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" value={item.participacion || ''} onChange={e => { const next = [...usos.acpm]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_acpm', next); }} /></div>
+                  <div className="form-group"><label>Uso</label><input placeholder="Ej: Generadores, compresores, maquinaria" value={item.descripcion || ''} onChange={e => { const next = [...usos.acpm]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_acpm', next); }} /></div>
+                  <div className="form-group"><label>Consumo mensual estimado (gal/mes)</label><input type="number" step="0.1" placeholder="Ej: 300" value={item.consumo || ''} onChange={e => { const next = [...usos.acpm]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_acpm', next); }} /></div>
+                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" placeholder="Ej: 50" value={item.participacion || ''} onChange={e => { const next = [...usos.acpm]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_acpm', next); }} /></div>
                 </div>
-                <button className="btn btn-delete" onClick={() => { const next = [...usos.acpm]; next.splice(index, 1); updateJsonField('usos_acpm', next); }}>Eliminar</button>
+                <button className="btn btn-delete" onClick={() => { if (!confirm('¿Estás seguro que deseas eliminar este uso?')) return; if (!confirm('Se eliminará permanentemente. ¿Deseas continuar?')) return; const next = [...usos.acpm]; next.splice(index, 1); updateJsonField('usos_acpm', next); }}>Eliminar</button>
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_acpm', [...usos.acpm, defaultUsoRow()])}>+ Agregar uso ACPM</button>
@@ -1029,11 +1108,11 @@ function RevisionEnergetica088({ sede, onBack }) {
             {usos.gasolina.map((item, index) => (
               <div key={index} style={{ background: '#eef4ff', padding: 14, borderRadius: 12, marginBottom: 12 }}>
                 <div className="form-row">
-                  <div className="form-group"><label>Uso</label><input value={item.descripcion || ''} onChange={e => { const next = [...usos.gasolina]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_gasolina', next); }} /></div>
-                  <div className="form-group"><label>Consumo mensual estimado (gal/mes)</label><input type="number" step="0.1" value={item.consumo || ''} onChange={e => { const next = [...usos.gasolina]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gasolina', next); }} /></div>
-                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" value={item.participacion || ''} onChange={e => { const next = [...usos.gasolina]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gasolina', next); }} /></div>
+                  <div className="form-group"><label>Uso</label><input placeholder="Ej: Vehículos, maquinaria de transporte" value={item.descripcion || ''} onChange={e => { const next = [...usos.gasolina]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('usos_gasolina', next); }} /></div>
+                  <div className="form-group"><label>Consumo mensual estimado (gal/mes)</label><input type="number" step="0.1" placeholder="Ej: 200" value={item.consumo || ''} onChange={e => { const next = [...usos.gasolina]; next[index] = { ...next[index], consumo: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gasolina', next); }} /></div>
+                  <div className="form-group"><label>Participación %</label><input type="number" step="0.1" placeholder="Ej: 30" value={item.participacion || ''} onChange={e => { const next = [...usos.gasolina]; next[index] = { ...next[index], participacion: parseFloat(e.target.value) || 0 }; updateJsonField('usos_gasolina', next); }} /></div>
                 </div>
-                <button className="btn btn-delete" onClick={() => { const next = [...usos.gasolina]; next.splice(index, 1); updateJsonField('usos_gasolina', next); }}>Eliminar</button>
+                <button className="btn btn-delete" onClick={() => { if (!confirm('¿Estás seguro que deseas eliminar este uso?')) return; if (!confirm('Se eliminará permanentemente. ¿Deseas continuar?')) return; const next = [...usos.gasolina]; next.splice(index, 1); updateJsonField('usos_gasolina', next); }}>Eliminar</button>
               </div>
             ))}
             <button className="btn btn-secondary" onClick={() => updateJsonField('usos_gasolina', [...usos.gasolina, defaultUsoRow()])}>+ Agregar uso gasolina</button>
@@ -1047,12 +1126,12 @@ function RevisionEnergetica088({ sede, onBack }) {
             {caracterizacion.map((item, index) => (
               <div key={index} style={{ background: '#fafafa', padding: 14, borderRadius: 12, marginBottom: 12 }}>
                 <div className="form-row">
-                  <div className="form-group"><label>Equipo/Uso</label><input value={item.equipo || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], equipo: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
-                  <div className="form-group"><label>Descripción</label><input value={item.descripcion || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
+                  <div className="form-group"><label>Equipo/Uso</label><input placeholder="Ej: Servidor, compresor, motor, etc." value={item.equipo || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], equipo: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
+                  <div className="form-group"><label>Descripción</label><input placeholder="Ej: Almacenamiento de datos, compresión de aire" value={item.descripcion || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], descripcion: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label>Consumo</label><input value={item.consumo || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], consumo: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
-                  <div className="form-group"><label>Notas</label><textarea value={item.notas || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], notas: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
+                  <div className="form-group"><label>Consumo</label><input placeholder="Ej: 5 kW, 3 m³/h, 500 W" value={item.consumo || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], consumo: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
+                  <div className="form-group"><label>Notas</label><textarea placeholder="Ej: Equipo en buen estado, requiere mantenimiento mensual, ubicado en planta 2" value={item.notas || ''} onChange={e => { const next = [...caracterizacion]; next[index] = { ...next[index], notas: e.target.value }; updateJsonField('caracterizacion_usos', next); }} /></div>
                 </div>
                 <button className="btn btn-delete" onClick={() => { const next = [...caracterizacion]; next.splice(index, 1); updateJsonField('caracterizacion_usos', next); }}>Eliminar</button>
               </div>
