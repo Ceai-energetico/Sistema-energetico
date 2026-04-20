@@ -8,6 +8,10 @@ function formatNumber(n){
   return Number(n).toLocaleString('es-CO');
 }
 
+function isMobileDevice(){
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+}
+
 const AUTH_EMAIL = 'ceaienergetico@gmail.com';
 const AUTH_PASSWORD = 'Energetico2026';
 const SESSION_KEY = 'energia_app_session';
@@ -299,16 +303,18 @@ function readImageAsDataUrl(file) {
 function Header({ user, onLogout }){
   return (
     <header className="header" style={{ background: 'linear-gradient(135deg, #0B7D4B 0%, #1ab66f 100%)', boxShadow: '0 8px 32px rgba(11, 125, 75, 0.15)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-      <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '24px', padding: '20px 32px' }}>
-        <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: '70px', height: '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} />
-        <div className="brand-text-container" style={{ flex: 1 }}>
-          <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}> Aplicativo Revisión Energética</div>
-          <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
+      <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', padding: '20px 32px', width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', minWidth: 0, flex: 1 }}>
+          <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: '70px', height: '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
+          <div className="brand-text-container" style={{ flex: 1, minWidth: 0 }}>
+            <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}> Aplicativo Revisión Energética</div>
+            <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
+          </div>
         </div>
         {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ color: '#fff', fontWeight: 500, fontSize: 14 }}>Conectado como <strong>{user.email}</strong></div>
-            <button className="btn btn-secondary" onClick={onLogout} style={{ padding: '10px 16px' }}>Cerrar sesión</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <div style={{ color: '#fff', fontWeight: 500, fontSize: 14, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>Conectado como <strong>{user.email}</strong></div>
+            <button className="btn btn-secondary" onClick={onLogout} style={{ padding: '10px 16px', flexShrink: 0 }}>Cerrar sesión</button>
           </div>
         )}
       </div>
@@ -552,6 +558,7 @@ function Detail({sede, onReload}){
     const value = form[fieldKey] ?? '';
 
     if(fieldKey === 'evidencias'){
+      const isMobile = isMobileDevice();
       return (
         <div className="form-group" key={fieldKey}>
           <label>{meta.label}</label>
@@ -562,7 +569,11 @@ function Detail({sede, onReload}){
               const dataUrls = await Promise.all(files.map(f=>readImageAsDataUrl(f)));
               updateForm('evidencias', [...(form.evidencias||[]), ...dataUrls]);
             }} />
-            <button type="button" className="btn btn-secondary" onClick={()=>{
+            <button type="button" className="btn btn-secondary" disabled={!isMobile} title={!isMobile ? 'El botón de cámara solo está disponible en dispositivos móviles (celulares y tablets)' : ''} style={{opacity: !isMobile ? 0.5 : 1, cursor: !isMobile ? 'not-allowed' : 'pointer'}} onClick={()=>{
+              if(!isMobile) {
+                alert('El botón de cámara solo funciona en dispositivos móviles (celulares, tablets, etc.).\\nEstás usando una computadora, por favor selecciona fotos desde tu dispositivo móvil.');
+                return;
+              }
               const input = document.createElement('input');
               input.type = 'file';
               input.accept = 'image/*';
@@ -768,7 +779,7 @@ function Detail({sede, onReload}){
 
           {showForm && (
             <div className="modal-overlay" onClick={()=>{ setShowForm(false); resetForm(); }}>
-              <div className="modal" onClick={e=>e.stopPropagation()}>
+              <div className="modal" style={{maxWidth:'950px', maxHeight:'90vh', overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
                 <h2>{editingId ? '✏️ Editar Equipo' : '➕ Registrar Nuevo Equipo'}</h2>
 
                 <div className="form-row">
