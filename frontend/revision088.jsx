@@ -27,6 +27,43 @@ function defaultCaracterizacionRow() {
   return { equipo:'', descripcion:'', consumo:'', notas:'' };
 }
 
+function normalizeRevisionPayload(rev) {
+  if (!rev) return rev;
+  const safeNumber = (value, fallback = 0) => {
+    if (value === null || value === undefined || value === '') return fallback;
+    const n = Number(value);
+    return Number.isNaN(n) ? fallback : n;
+  };
+  const safeInt = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return Number.isNaN(n) ? null : Math.trunc(n);
+  };
+  return {
+    ...rev,
+    area_total_m2: safeNumber(rev.area_total_m2, 0),
+    area_util_m2: safeNumber(rev.area_util_m2, 0),
+    temp_promedio_c: safeNumber(rev.temp_promedio_c, 0),
+    vel_viento_kmh: safeNumber(rev.vel_viento_kmh, 0),
+    radiacion_solar_kwh_m2_dia: safeNumber(rev.radiacion_solar_kwh_m2_dia, 0),
+    ano_construccion: safeInt(rev.ano_construccion),
+    num_trabajadores: safeNumber(rev.num_trabajadores, 0),
+    num_aprendices: safeNumber(rev.num_aprendices, 0),
+    num_visitantes: safeNumber(rev.num_visitantes, 0),
+    generacion_producida_kwh_anio: safeNumber(rev.generacion_producida_kwh_anio, 0),
+    fecha: rev.fecha || '',
+    regional: rev.regional || '',
+    centro_formacion: rev.centro_formacion || '',
+    sede_nombre: rev.sede_nombre || '',
+    direccion: rev.direccion || '',
+    ciudad: rev.ciudad || '',
+    sede_comparte: rev.sede_comparte || '',
+    propiedad_sede: rev.propiedad_sede || '',
+    tiene_renovables: rev.tiene_renovables || '',
+    tipos_renovables: rev.tipos_renovables || '',
+  };
+}
+
 function downloadExcelFile(workbook, fileName) {
   if (typeof XLSX === 'undefined') {
     alert('La librería de Excel no está cargada. Recarga la página.');
@@ -172,7 +209,7 @@ function RevisionEnergetica088({ sede, onBack }) {
     
     const autoSaveTimer = setTimeout(async () => {
       try {
-        const payload = {
+        const payload = normalizeRevisionPayload({
           ...revision,
           regimen_trabajo: revision.regimen_trabajo ? JSON.stringify(safeJsonParse(revision.regimen_trabajo, {})) : '{}',
           actividades: revision.actividades ? JSON.stringify(safeJsonParse(revision.actividades, {})) : '{}',
@@ -183,7 +220,7 @@ function RevisionEnergetica088({ sede, onBack }) {
           usos_acpm: revision.usos_acpm ? JSON.stringify(safeJsonParse(revision.usos_acpm, [])) : '[]',
           usos_gasolina: revision.usos_gasolina ? JSON.stringify(safeJsonParse(revision.usos_gasolina, [])) : '[]',
           caracterizacion_usos: revision.caracterizacion_usos ? JSON.stringify(safeJsonParse(revision.caracterizacion_usos, [])) : '[]',
-        };
+        });
 
         const res = await fetch(`/api/revision088/${revision.id}`, {
           method: 'PUT',
@@ -677,7 +714,7 @@ function RevisionEnergetica088({ sede, onBack }) {
 
   async function guardar() {
     if (!revision) return;
-    const payload = {
+    const payload = normalizeRevisionPayload({
       ...revision,
       regimen_trabajo: JSON.stringify(regimen),
       actividades: JSON.stringify(actividades),
@@ -688,7 +725,7 @@ function RevisionEnergetica088({ sede, onBack }) {
       usos_acpm: JSON.stringify(usos.acpm),
       usos_gasolina: JSON.stringify(usos.gasolina),
       caracterizacion_usos: JSON.stringify(caracterizacion),
-    };
+    });
     try {
       const url = revision.id ? `/api/revision088/${revision.id}` : `/api/sedes/${sede.id}/revision088`;
       const method = revision.id ? 'PUT' : 'POST';
@@ -725,7 +762,7 @@ function RevisionEnergetica088({ sede, onBack }) {
       temp_promedio_c: 0,
       vel_viento_kmh: 0,
       radiacion_solar_kwh_m2_dia: 0,
-      ano_construccion: '',
+      ano_construccion: null,
       sede_comparte: '',
       propiedad_sede: '',
       num_trabajadores: 0,
@@ -829,7 +866,7 @@ function RevisionEnergetica088({ sede, onBack }) {
             <h4>Información básica</h4>
             <div className="form-row">
               <div className="form-group"><label>Fecha</label><input type="date" value={revision.fecha || ''} onChange={e => updateField('fecha', e.target.value)} /></div>
-              <div className="form-group"><label>Regional</label><input placeholder="Ej: Bogotá, Medellín, Cali" value={revision.regional || ''} onChange={e => updateField('regional', e.target.value)} /></div>
+              <div className="form-group"><label>Regional</label><input placeholder="Ej: Regional Valle" value={revision.regional || ''} onChange={e => updateField('regional', e.target.value)} /></div>
               <div className="form-group"><label>Centro de formación</label><input placeholder="Ej: Centro CEAI, Centro de gestión" value={revision.centro_formacion || ''} onChange={e => updateField('centro_formacion', e.target.value)} /></div>
             </div>
             <div className="form-row">
@@ -849,7 +886,7 @@ function RevisionEnergetica088({ sede, onBack }) {
             <div className="form-row">
               <div className="form-group"><label>Vel. viento (km/h)</label><input type="number" step="0.1" placeholder="Ej: 3.5" value={revision.vel_viento_kmh || ''} onChange={e => updateNumericField('vel_viento_kmh', e.target.value)} /></div>
               <div className="form-group"><label>Radiación solar (kWh/m²día)</label><input type="number" step="0.1" placeholder="Ej: 4.5" value={revision.radiacion_solar_kwh_m2_dia || ''} onChange={e => updateNumericField('radiacion_solar_kwh_m2_dia', e.target.value)} /></div>
-              <div className="form-group"><label>Año de construcción</label><input type="number" placeholder="Ej: 2015" value={revision.ano_construccion || ''} onChange={e => updateField('ano_construccion', e.target.value ? parseInt(e.target.value) : '')} /></div>
+              <div className="form-group"><label>Año de construcción</label><input type="number" placeholder="Ej: 2015" value={revision.ano_construccion || ''} onChange={e => updateField('ano_construccion', e.target.value ? parseInt(e.target.value) : null)} /></div>
             </div>
           </div>
 

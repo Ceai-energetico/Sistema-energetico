@@ -1,10 +1,62 @@
 const ReactHooks = React || window.React;
 const useState = ReactHooks.useState;
 const useEffect = ReactHooks.useEffect;
+const useRef = ReactHooks.useRef;
 
 function formatNumber(n){
   if(n === null || n === undefined || Number.isNaN(Number(n))) return '-';
   return Number(n).toLocaleString('es-CO');
+}
+
+const AUTH_EMAIL = 'ceaienergetico@gmail.com';
+const AUTH_PASSWORD = 'Energetico2026';
+const SESSION_KEY = 'energia_app_session';
+const INACTIVITY_MS = 10 * 60 * 1000; // 10 minutos
+
+function Login({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (onLogin(email.trim(), password)) return;
+    setError('Correo o contraseña incorrectos. Intenta de nuevo.');
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-brand">
+          <div className="login-brand-icon">⚡</div>
+          <div>
+            <h1>Ingreso Revisión Energética</h1>
+            <p>Accede al sistema con el correo institucional y contraseña segura.</p>
+          </div>
+        </div>
+        <form className="login-form" onSubmit={handleSubmit}>
+          <label>Correo electrónico</label>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Example@gmail.com"
+            required
+          />
+          <label>Contraseña</label>
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="Example123"
+            required
+          />
+          {error && <div className="login-error">{error}</div>}
+          <button type="submit" className="btn btn-primary">Ingresar</button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 const INVENTORY_TYPES = [
@@ -172,15 +224,21 @@ function readImageAsDataUrl(file) {
   });
 }
 
-function Header(){
+function Header({ user, onLogout }){
   return (
     <header className="header" style={{ background: 'linear-gradient(135deg, #0B7D4B 0%, #1ab66f 100%)', boxShadow: '0 8px 32px rgba(11, 125, 75, 0.15)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
       <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '24px', padding: '20px 32px' }}>
         <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: '70px', height: '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} />
         <div className="brand-text-container" style={{ flex: 1 }}>
-          <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}>⚡ Aplicativo Revisión Energética</div>
-          <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}>🔬 Laboratorio de Servicios Tecnológicos CEAI</div>
+          <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}> Aplicativo Revisión Energética</div>
+          <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
         </div>
+        {user && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ color: '#fff', fontWeight: 500, fontSize: 14 }}>Conectado como <strong>{user.email}</strong></div>
+            <button className="btn btn-secondary" onClick={onLogout} style={{ padding: '10px 16px' }}>Cerrar sesión</button>
+          </div>
+        )}
       </div>
     </header>
   )
@@ -309,12 +367,6 @@ function Detail({sede, onReload}){
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedTipo, setSelectedTipo] = useState(INVENTORY_TYPES[0]?.key || '');
-  const [filterText, setFilterText] = useState('');
-  const [filterMarca, setFilterMarca] = useState('');
-  const [filterGrupo, setFilterGrupo] = useState('');
-  const [filterMinConsumo, setFilterMinConsumo] = useState('');
-  const [filterMaxConsumo, setFilterMaxConsumo] = useState('');
-  const [filterHasFoto, setFilterHasFoto] = useState(false);
   const [viewItem, setViewItem] = useState(null);
   const [form, setForm] = useState({
     hoja_tipo: selectedTipo,
@@ -406,39 +458,7 @@ function Detail({sede, onReload}){
   const { valor_total, horas_uso_mes, potencia_total_kw, consumo_mensual_kwh, calculo_gas_kg } = computeCalculated();
 
   function getFilteredInventario(){
-    const q = (filterText || '').toLowerCase().trim();
-    const marca = (filterMarca || '').toLowerCase().trim();
-    const grupo = (filterGrupo || '').toLowerCase().trim();
-    const minConsumo = Number(filterMinConsumo) || 0;
-    const maxConsumo = Number(filterMaxConsumo) || 0;
-
-    return inventario
-      .filter(i => !selectedTipo || i.hoja_tipo === selectedTipo)
-      .filter(i => {
-        if(!q) return true;
-        const haystack = [i.descripcion, i.marca, i.modelo, i.proveedor, i.grupo_principal]
-          .filter(Boolean)
-          .join(' ') 
-          .toLowerCase();
-        return haystack.includes(q);
-      })
-      .filter(i => {
-        if(marca && !String(i.marca || '').toLowerCase().includes(marca)) return false;
-        if(grupo && !String(i.grupo_principal || '').toLowerCase().includes(grupo)) return false;
-        return true;
-      })
-      .filter(i => {
-        const consumo = Number(i.consumo_mensual_kwh) || 0;
-        if(minConsumo && consumo < minConsumo) return false;
-        if(maxConsumo && consumo > maxConsumo) return false;
-        return true;
-      })
-      .filter(i => {
-        if(filterHasFoto){
-          return Array.isArray(i.evidencias) && i.evidencias.length > 0;
-        }
-        return true;
-      });
+    return inventario.filter(i => !selectedTipo || i.hoja_tipo === selectedTipo);
   }
 
   function renderField(fieldKey){
@@ -595,93 +615,65 @@ function Detail({sede, onReload}){
                   {INVENTORY_TYPES.map(t=> <option key={t.key} value={t.key}>{t.label}</option>)}
                 </select>
               </div>
-              <div className="filter-group">
-                <label>Buscar</label>
-                <input value={filterText} onChange={e=>setFilterText(e.target.value)} placeholder="Descripción, marca, modelo..." />
               </div>
-              <div className="filter-group">
-                <label>Marca</label>
-                <input value={filterMarca} onChange={e=>setFilterMarca(e.target.value)} placeholder="Ej: HP, Samsung" />
-              </div>
-              <div className="filter-group">
-                <label>Grupo</label>
-                <input value={filterGrupo} onChange={e=>setFilterGrupo(e.target.value)} placeholder="Ej: Ofimática" />
-              </div>
-              <div className="filter-group">
-                <label>Consumo ≥ (kWh)</label>
-                <input type="number" value={filterMinConsumo} onChange={e=>setFilterMinConsumo(e.target.value)} placeholder="0" />
-              </div>
-              <div className="filter-group">
-                <label>Consumo ≤ (kWh)</label>
-                <input type="number" value={filterMaxConsumo} onChange={e=>setFilterMaxConsumo(e.target.value)} placeholder="99999" />
-              </div>
-              <div className="filter-group" style={{alignItems:'center'}}>
-                <label style={{marginBottom:6}}>Sólo con fotos</label>
-                <input type="checkbox" checked={filterHasFoto} onChange={e=>setFilterHasFoto(e.target.checked)} />
+
+              <div className="inventory-actions">
+                <button className="btn btn-primary" onClick={()=>{ setShowForm(true); resetForm(); }}>➕ Agregar equipo</button>
+                <div style={{color:'#555', fontSize:12}}>{inventario.length} equipos</div>
               </div>
             </div>
           </div>
 
-          <div className="inventory-actions">
-            <button className="btn btn-secondary" onClick={()=>downloadCsv(getFilteredInventario(), `inventario-${(selectedTipo||'todos').replace(/\s+/g,'_')}.csv`)}>
-              📥 Exportar CSV
-            </button>
-            <button className="btn btn-primary" onClick={()=>{ resetForm(); setShowForm(true); }}>
-              ➕ Nuevo Equipo
-            </button>
-          </div>
-        </div>
+          {showForm && (
+            <div className="modal-overlay" onClick={()=>{ setShowForm(false); resetForm(); }}>
+              <div className="modal" onClick={e=>e.stopPropagation()}>
+                <h2>{editingId ? '✏️ Editar Equipo' : '➕ Registrar Nuevo Equipo'}</h2>
 
-        {showForm && (
-          <div className="modal-overlay" onClick={()=>{ setShowForm(false); resetForm(); }}>
-            <div className="modal" onClick={e=>e.stopPropagation()}>
-              <h2>{editingId ? '✏️ Editar Equipo' : '➕ Registrar Nuevo Equipo'}</h2>
-
-              <div className="form-row">
-                <div className="form-group" style={{flex:1}}>
-                  <label>Categoría / Hoja *</label>
-                  <select value={form.hoja_tipo} onChange={e=>updateForm('hoja_tipo', e.target.value)}>
-                    <option value="">-- Seleccionar --</option>
-                    {INVENTORY_TYPES.map(t=>(
-                      <option key={t.key} value={t.key}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {(() => {
-                const schema = FORM_SCHEMAS[form.hoja_tipo] || FORM_SCHEMAS[selectedTipo];
-                if(!schema) return <div className="empty">Selecciona un tipo de formulario para ver los campos disponibles.</div>;
-                return schema.sections.map(section => (
-                  <div key={section.title} className="form-section">
-                    <h4 className="form-section-title">{section.title}</h4>
-                    <div className="form-row">
-                      {section.fields.map(renderField)}
-                    </div>
+                <div className="form-row">
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Categoría / Hoja *</label>
+                    <select value={form.hoja_tipo} onChange={e=>updateForm('hoja_tipo', e.target.value)}>
+                      <option value="">-- Seleccionar --</option>
+                      {INVENTORY_TYPES.map(t=>(
+                        <option key={t.key} value={t.key}>{t.label}</option>
+                      ))}
+                    </select>
                   </div>
-                ));
-              })()}
+                </div>
 
-              <div className="computed-box">
-                <strong>📊 Valores Calculados</strong>
-                <div className="computed-grid">
-                  <div><strong>Valor Total:</strong> {formatNumber(valor_total)} COP</div>
-                  <div><strong>Horas de uso estimadas al mes:</strong> {formatNumber(horas_uso_mes)} h</div>
-                  <div><strong>Potencia total kW:</strong> {formatNumber(potencia_total_kw)} kW</div>
-                  <div><strong>Consumo energía estimado mensual kWh:</strong> {formatNumber(consumo_mensual_kwh)} kWh</div>
-                  {form.hoja_tipo === 'Soporte Gases Refrigerantes' && (
-                    <div><strong>Cálculo en Kg:</strong> {formatNumber(calculo_gas_kg)} kg</div>
-                  )}
+                {(() => {
+                  const schema = FORM_SCHEMAS[form.hoja_tipo] || FORM_SCHEMAS[selectedTipo];
+                  if(!schema) return <div className="empty">Selecciona un tipo de formulario para ver los campos disponibles.</div>;
+                  return schema.sections.map(section => (
+                    <div key={section.title} className="form-section">
+                      <h4 className="form-section-title">{section.title}</h4>
+                      <div className="form-row">
+                        {section.fields.map(renderField)}
+                      </div>
+                    </div>
+                  ));
+                })()}
+
+                <div className="computed-box">
+                  <strong>📊 Valores Calculados</strong>
+                  <div className="computed-grid">
+                    <div><strong>Valor Total:</strong> {formatNumber(valor_total)} COP</div>
+                    <div><strong>Horas de uso estimadas al mes:</strong> {formatNumber(horas_uso_mes)} h</div>
+                    <div><strong>Potencia total kW:</strong> {formatNumber(potencia_total_kw)} kW</div>
+                    <div><strong>Consumo energía estimado mensual kWh:</strong> {formatNumber(consumo_mensual_kwh)} kWh</div>
+                    {form.hoja_tipo === 'Soporte Gases Refrigerantes' && (
+                      <div><strong>Cálculo en Kg:</strong> {formatNumber(calculo_gas_kg)} kg</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button className="btn btn-secondary" onClick={()=>{ setShowForm(false); resetForm(); }}>Cancelar</button>
+                  <button className="btn btn-primary" onClick={saveItem}>Guardar</button>
                 </div>
               </div>
-
-              <div className="modal-actions">
-                <button className="btn btn-secondary" onClick={()=>{ setShowForm(false); resetForm(); }}>Cancelar</button>
-                <button className="btn btn-primary" onClick={saveItem}>Guardar</button>
-              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {viewItem && (
           <div className="modal-overlay" onClick={()=>setViewItem(null)}>
@@ -835,12 +827,80 @@ function Detail({sede, onReload}){
 }
 
 function App(){
+  const [user, setUser] = useState(null);
   const [sedes, setSedes] = useState([]);
   const [sede, setSede] = useState(null);
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('detail'); // 'detail' o 'revision088'
+  const inactivityTimer = useRef(null);
+
+  const saveSession = (lastActive = Date.now()) => {
+    const payload = { email: AUTH_EMAIL, lastActive };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+  };
+
+  const clearSession = () => {
+    localStorage.removeItem(SESSION_KEY);
+    setUser(null);
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+      inactivityTimer.current = null;
+    }
+  };
+
+  const logout = (silent = false) => {
+    clearSession();
+    if (!silent) alert('Tu sesión ha terminado. Ingresa nuevamente.');
+  };
+
+  const resetInactivityTimer = () => {
+    if (!user) return;
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+    }
+    inactivityTimer.current = setTimeout(() => logout(true), INACTIVITY_MS);
+    saveSession(Date.now());
+  };
+
+  const handleActivity = () => {
+    if (!user) return;
+    resetInactivityTimer();
+  };
+
+  const login = (email, password) => {
+    if (email.toLowerCase() === AUTH_EMAIL && password === AUTH_PASSWORD) {
+      setUser({ email: AUTH_EMAIL });
+      resetInactivityTimer();
+      return true;
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem(SESSION_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed?.email === AUTH_EMAIL && Date.now() - parsed.lastActive < INACTIVITY_MS) {
+          setUser({ email: AUTH_EMAIL });
+          resetInactivityTimer();
+        } else {
+          localStorage.removeItem(SESSION_KEY);
+        }
+      } catch {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const events = ['mousemove','keydown','click','touchstart'];
+    events.forEach(event => window.addEventListener(event, handleActivity));
+    return () => events.forEach(event => window.removeEventListener(event, handleActivity));
+  }, [user]);
 
   useEffect(()=>{
+    if(!user) return;
     fetch('/api/sedes')
       .then(r=>{
         if(!r.ok) throw new Error('Error al listar sedes');
@@ -853,14 +913,14 @@ function App(){
         console.error(err);
         setError('No se pudieron cargar las sedes');
       });
-  },[]);
+  },[user]);
 
   // auto select first sede cuando sedes carguen
   useEffect(()=>{
-    if(sedes && sedes.length > 0 && !sede){
+    if(user && sedes && sedes.length > 0 && !sede){
       handleSelect(sedes[0].id);
     }
-  }, [sedes]);
+  }, [sedes, user]);
 
   function handleSelect(id){
     setActiveView('detail'); // Volver a vista detail cuando se selecciona sede
@@ -878,9 +938,13 @@ function App(){
       });
   }
 
+  if(!user){
+    return <Login onLogin={login} />;
+  }
+
   return (
     <div className="app">
-      <Header />
+      <Header user={user} onLogout={() => logout(false)} />
       <div className="main">
         <Sidebar sedes={sedes} selectedId={sede?.id} sede={sede} onSelect={handleSelect} activeView={activeView} onViewChange={setActiveView} />
         <div className="content">
