@@ -300,25 +300,102 @@ function readImageAsDataUrl(file) {
   });
 }
 
-function Header({ user, onLogout }){
+function Header({ user, onLogout, sedes, selectedId, onSelect, activeView, onViewChange }){
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <header className="header" style={{ background: 'linear-gradient(135deg, #0B7D4B 0%, #1ab66f 100%)', boxShadow: '0 8px 32px rgba(11, 125, 75, 0.15)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-      <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', padding: '20px 32px', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', minWidth: 0, flex: 1 }}>
-          <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: '70px', height: '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
-          <div className="brand-text-container" style={{ flex: 1, minWidth: 0 }}>
-            <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}> Aplicativo Revisión Energética</div>
-            <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
+    <>
+      <header className="header" style={{ background: 'linear-gradient(135deg, #0B7D4B 0%, #1ab66f 100%)', boxShadow: '0 8px 32px rgba(11, 125, 75, 0.15)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', padding: '20px 32px', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', minWidth: 0, flex: 1 }}>
+            <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: '70px', height: '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
+            <div className="brand-text-container" style={{ flex: 1, minWidth: 0 }}>
+              <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}> Aplicativo Revisión Energética</div>
+              <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            <button 
+              className="hamburger-menu" 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ background: 'none', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', padding: '8px', transition: 'transform 0.3s' }}
+              aria-label="Menu"
+            >
+              ☰
+            </button>
+            {user && (
+              <button className="btn btn-secondary" onClick={onLogout} style={{ padding: '10px 16px', flexShrink: 0 }}>Cerrar sesión</button>
+            )}
           </div>
         </div>
-        {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <div style={{ color: '#fff', fontWeight: 500, fontSize: 14, textAlign: 'right', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>Conectado como <strong>{user.email}</strong></div>
-            <button className="btn btn-secondary" onClick={onLogout} style={{ padding: '10px 16px', flexShrink: 0 }}>Cerrar sesión</button>
+      </header>
+
+      {mobileMenuOpen && (
+        <div className="mobile-menu-open">
+          <div style={{ color: '#fff', marginBottom: '16px', fontSize: '12px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+            Conectado como <strong style={{ display: 'block', wordBreak: 'break-all', marginTop: '4px' }}>{user?.email || ''}</strong>
           </div>
-        )}
-      </div>
-    </header>
+
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>REVISIONES</div>
+            {Array.isArray(sedes) && sedes.map(s => (
+              <button
+                key={s.id}
+                style={{ 
+                  display: 'block', 
+                  width: '100%', 
+                  background: selectedId === s.id ? 'rgba(255,255,255,0.15)' : 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '12px 12px',
+                  textAlign: 'left',
+                  borderRadius: '8px',
+                  marginBottom: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+                onClick={() => {
+                  onSelect(s.id);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <div style={{ marginBottom: '2px' }}>{s.nombre === 'Sede Demo' ? '📋 087' : s.nombre.split(' ')[0]}</div>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>{s.nombre === 'Sede Demo' ? 'Usos finales de energía' : s.nombre}</div>
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.5px' }}>HERRAMIENTAS</div>
+            <button
+              style={{
+                display: 'block',
+                width: '100%',
+                background: activeView === 'revision088' ? 'rgba(255,255,255,0.15)' : 'transparent',
+                border: 'none',
+                color: '#fff',
+                padding: '12px 12px',
+                textAlign: 'left',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+              onClick={() => {
+                onViewChange('revision088');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <div style={{ marginBottom: '2px' }}>⚙️ Revisión 088</div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>Formulario completo</div>
+            </button>
+          </div>
+
+          <button className="btn btn-secondary" onClick={onLogout} style={{ width: '100%', padding: '10px 16px' }}>Cerrar sesión</button>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -1174,7 +1251,7 @@ function App(){
 
   return (
     <div className="app">
-      <Header user={user} onLogout={() => logout(false)} />
+      <Header user={user} onLogout={() => logout(false)} sedes={sedes} selectedId={sede?.id} onSelect={handleSelect} activeView={activeView} onViewChange={setActiveView} />
       <div className="main">
         <Sidebar sedes={sedes} selectedId={sede?.id} sede={sede} onSelect={handleSelect} activeView={activeView} onViewChange={setActiveView} />
         <div className="content">

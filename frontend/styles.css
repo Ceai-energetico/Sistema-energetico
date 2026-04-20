@@ -1202,6 +1202,55 @@ body {
   text-overflow: ellipsis;
 }
 
+/* Hamburger Menu */
+.hamburger-menu {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.mobile-menu {
+  background: #0a5f3a;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-menu-open {
+  background: #0a5f3a;
+  padding: 20px 16px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  animation: slideDown 0.3s ease-out;
+  z-index: 99;
+  position: relative;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header .btn-secondary {
+  display: block;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .header .btn-secondary {
+    display: none;
+  }
+}
+
 /* RESPONSIVE */
 @media (max-width: 1200px) {
   .detail-cards {
@@ -1232,6 +1281,7 @@ body {
   .brand {
     gap: 12px;
     padding: 12px 0 !important;
+    width: 100%;
   }
 
   .brand-text-main {
@@ -1245,6 +1295,15 @@ body {
   .sena-logo-img {
     width: 50px !important;
     height: 50px !important;
+    flex-shrink: 0;
+  }
+
+  .hamburger-menu {
+    display: block !important;
+  }
+
+  .header .btn-secondary {
+    display: none;
   }
 
   .sidebar {
@@ -1343,6 +1402,7 @@ body {
   .brand {
     gap: 10px;
     padding: 10px 0 !important;
+    width: 100%;
   }
 
   .brand-text-main {
@@ -1352,11 +1412,16 @@ body {
   .brand-text-sub {
     font-size: 10px !important;
   }
+
+  .hamburger-menu {
+    display: block !important;
+  }
   
   .sena-logo-img {
     width: 36px !important;
     height: 36px !important;
     padding: 4px !important;
+    flex-shrink: 0;
   }
   
   .brand-text {
