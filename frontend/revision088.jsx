@@ -5,6 +5,42 @@ const semana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domi
 const regimenSlots = ['00:00-02:00','02:01-04:00','04:01-06:00','06:01-08:00','08:01-10:00','10:01-12:00','12:01-14:00','14:01-16:00','16:01-18:00','18:01-20:00','20:01-22:00','22:01-24:00'];
 const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+const REGIONALES_CENTROS = {
+  'San Andrés': ['Centro de Formación Turística, Gente de Mar y de Servicios'],
+  'Bolívar': ['Centro Agroempresarial y Minero', 'Centro Internacional Náutico, Fluvial y Portuario', 'Centro para la Industria Petroquímica', 'Centro de Comercio y Servicios'],
+  'Sucre': ['Centro de Innovación, la Tecnología y los Servicios'],
+  'Córdoba': ['Centro Agropecuario y de Biotecnología El Porvenir', 'Centro de Comercio, Industria y Turismo de Córdoba'],
+  'Antioquia': ['Centro de los Recursos Naturales Renovables - La Salada', 'Centro de Diseño y Manufactura del Cuero', 'Centro de Formación en Diseño, Confección y Moda', 'Centro para el Desarrollo del Hábitat y la Construcción', 'Centro Tecnológico de Mobiliario', 'Centro Tecnológico del Mobiliario', 'Centro Textil y de Gestión Industrial', 'Centro de Comercio', 'Centro de Servicios de Salud', 'Centro de Servicios y Gestión Empresarial', 'Complejo Tecnológico para la Gestión Agroempresarial', 'Complejo Tecnológico Minero Agroempresarial', 'Complejo Tecnológico, Industrial, Pecuario y Turístico', 'Complejo Tecnológico, Turismo y Agroindustria del Suroeste', 'Occidente Antioqueño', 'Centro de Formación Minero Ambiental'],
+  'Chocó': ['Centro de Recursos Naturales, Industria y Biodiversidad'],
+  'Caldas': ['Centro para la Formación Cafetera', 'Centro de Automatización Industrial', 'Centro de Procesos Industriales y Construcción', 'Centro de Comercio y Servicios', 'Centro Pecuario y Agroempresarial'],
+  'Risaralda': ['Centro Atención Sector Agropecuario', 'Centro de Diseño e Innovación Tecnológica Industrial', 'Centro de Comercio y Servicios'],
+  'Quindío': ['Centro Agroindustrial', 'Centro para el Desarrollo Tecnológico de la Construcción y la Industria', 'Centro de Comercio y Turismo'],
+  'Valle del Cauca': ['Centro Agropecuario de Buga', 'Centro Náutico Pesquero de Buenaventura', 'Centro de Electricidad y Automatización Industrial', 'Centro de Construcción', 'Centro de Diseño Tecnológico Industrial', 'Centro Nacional de Asistencia Técnica a la Industria', 'Centro de Gestión Tecnológica de Servicios', 'Centro de Genética y Biotecnología', 'Centro de Biotecnología Industrial', 'Centro de Industria y la Construcción'],
+  'Nariño': ['Centro Sur Colombiano de Logística Internacional', 'Centro Agroindustrial y Pesquero del Pacífico', 'Centro Internacional de Producción Limpia - Lope'],
+  'Atlántico': ['Centro para el Desarrollo Agroecológico y Agroindustrial', 'Centro Industrial y Comercial', 'Centro Nacional Colombo Alemán', 'Centro de Comercio y Servicios'],
+  'La Guajira': ['Centro Industrial y de Energías Alternativas', 'Centro Agroempresarial y Acuícola'],
+  'Cesar': ['Centro Biotecnológico del Caribe', 'Centro Agroempresarial', 'Centro de Operación y Mantenimiento Minero'],
+  'Norte de Santander': ['Centro de Formación para el Desarrollo Rural y Minero', 'Centro de la Industria, la Empresa y los Servicios'],
+  'Santander': ['Centro de Atención al Sector Agropecuario', 'Centro Industrial de Mantenimiento Integral', 'Centro Industrial de Diseño y Manufactura', 'Centro de Servicios Empresariales y Turísticos', 'Centro Industrial de Mantenimiento y Manufactura', 'Centro Agroempresarial y Turístico de los Andes', 'Centro de Gestión Agroempresarial del Oriente', 'Tecnoparque (1)'],
+  'Boyacá': ['Centro de Desarrollo Agropecuario y Agroindustrial', 'Centro Minero', 'Centro de Gestión Administrativa y Fortalecimiento Empresarial', 'Centro Industrial de Mantenimiento y Manufactura', 'Centro de Formación Agroindustrial y de Servicios'],
+  'Arauca': ['Centro de Gestión y Desarrollo Agroindustrial de Arauca'],
+  'Vichada': ['Centro de Producción y Transformación Agroindustrial de la Orinoquía'],
+  'Casanare': ['Centro Agroindustrial y Fortalecimiento Empresarial de Casanare'],
+  'Guainía': ['Centro Ambiental y Ecoturístico del Nororiente Amazónico'],
+  'Meta': ['Centro de Gestión y Desarrollo Sostenible del Meta', 'Centro de Industria y Servicios del Meta'],
+  'Guaviare': ['Centro de Desarrollo Agroindustrial, Turístico y Tecnológico del Guaviare'],
+  'Vaupés': ['Centro Agropecuario y de Servicios Ambientales - Jirijirimo'],
+  'Caquetá': ['Centro Tecnológico de la Amazonia'],
+  'Amazonas': ['Centro para la Biodiversidad y el Turismo del Amazonas'],
+  'Huila': ['Centro de Formación Agroindustrial', 'Centro de Formación Agroempresarial y Desarrollo Pecuario del Huila', 'Centro de Desarrollo Agroempresarial y Turístico del Huila', 'Centro de la Industria, la Empresa y los Servicios', 'Centro de Gestión y Desarrollo Sostenible Surcolombiano'],
+  'Tolima': ['Centro Agropecuario La Granja', 'Centro de la Industria y la Construcción', 'Centro de Comercio y Servicios'],
+  'Putumayo': ['Centro Agroforestal y Acuícola Arapaima'],
+  'Cauca': ['Centro Agropecuario', 'Centro de Teleinformática y Producción Industrial', 'Centro de Comercio y Servicios'],
+  'Cundinamarca': ['Centro Industrial de Desarrollo Empresarial de Soacha', 'Centro de Desarrollo Agroindustrial y Empresarial', 'Centro Agroecológico y Empresarial', 'Centro de la Tecnología de Diseño y la Productividad Empresarial', 'Centro de Biotecnología Agropecuaria', 'Centro de Desarrollo Agroempresarial de Chía'],
+  'Distrito Capital': ['Centro de Tecnologías para la Construcción y la Madera', 'Centro de Electricidad, Electrónica y Telecomunicaciones', 'Centro de Gestión Industrial', 'Centro de Manufactura en Textil y Cuero', 'Centro de Tecnologías de las Artes Gráficas', 'Centro Metalmecánico', 'Centro de Materiales y Ensayos', 'Centro de Diseño y Metrología', 'Centro para la Industria de la Comunicación Gráfica', 'Centro de Gestión de Mercados, Logística y Tecnologías de la Información', 'Centro de Formación de Talento Humano en Salud', 'Centro de Formación Administrativa', 'Centro de Servicios Financieros', 'Centro Nacional de Hotelería, Turismo y Alimentos', 'Centro de Formación en Actividad Física y Cultura'],
+  'Magdalena': ['Centro Acuícola y Agroindustrial de Gaira', 'Centro de Logística y Promoción Ecoturística del Magdalena'],
+};
+
 function safeJsonParse(raw, fallback) {
   if (raw === null || raw === undefined || raw === '') return fallback;
   try {
@@ -866,11 +902,30 @@ function RevisionEnergetica088({ sede, onBack }) {
             <h4>Información básica</h4>
             <div className="form-row">
               <div className="form-group"><label>Fecha</label><input type="date" value={revision.fecha || ''} onChange={e => updateField('fecha', e.target.value)} /></div>
-              <div className="form-group"><label>Regional</label><input placeholder="Ej: Regional Valle" value={revision.regional || ''} onChange={e => updateField('regional', e.target.value)} /></div>
-              <div className="form-group"><label>Centro de formación</label><input placeholder="Ej: Centro CEAI, Centro de gestión" value={revision.centro_formacion || ''} onChange={e => updateField('centro_formacion', e.target.value)} /></div>
+              <div className="form-group">
+                <label>Regional</label>
+                <select value={revision.regional || ''} onChange={e => {
+                  updateField('regional', e.target.value);
+                  updateField('centro_formacion', '');
+                }}>
+                  <option value="">Seleccionar regional</option>
+                  {Object.keys(REGIONALES_CENTROS).sort().map((regional, idx) => (
+                    <option key={idx} value={regional}>{regional}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Centro de formación</label>
+                <select value={revision.centro_formacion || ''} onChange={e => updateField('centro_formacion', e.target.value)} disabled={!revision.regional}>
+                  <option value="">Seleccionar centro</option>
+                  {revision.regional && REGIONALES_CENTROS[revision.regional] && REGIONALES_CENTROS[revision.regional].map((centro, idx) => (
+                    <option key={idx} value={centro}>{centro}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Sede</label><input placeholder="Ej: Sede principal, Sede Bogotá" value={revision.sede_nombre || ''} onChange={e => updateField('sede_nombre', e.target.value)} /></div>
+              <div className="form-group"><label>Sede</label><input type="text" placeholder="Ej: Sede principal, Sede Bogotá" value={revision.sede_nombre || ''} onChange={e => updateField('sede_nombre', e.target.value)} /></div>
               <div className="form-group"><label>Dirección</label><input placeholder="Ej: Calle 10 #45-60" value={revision.direccion || ''} onChange={e => updateField('direccion', e.target.value)} /></div>
               <div className="form-group"><label>Ciudad</label><input placeholder="Ej: Bogotá, D.C." value={revision.ciudad || ''} onChange={e => updateField('ciudad', e.target.value)} /></div>
             </div>

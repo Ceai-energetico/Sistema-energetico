@@ -13,6 +13,42 @@ const AUTH_PASSWORD = 'Energetico2026';
 const SESSION_KEY = 'energia_app_session';
 const INACTIVITY_MS = 10 * 60 * 1000; // 10 minutos
 
+const REGIONALES_CENTROS = {
+  'San Andrés': ['Centro de Formación Turística, Gente de Mar y de Servicios'],
+  'Bolívar': ['Centro Agroempresarial y Minero', 'Centro Internacional Náutico, Fluvial y Portuario', 'Centro para la Industria Petroquímica', 'Centro de Comercio y Servicios'],
+  'Sucre': ['Centro de Innovación, la Tecnología y los Servicios'],
+  'Córdoba': ['Centro Agropecuario y de Biotecnología El Porvenir', 'Centro de Comercio, Industria y Turismo de Córdoba'],
+  'Antioquia': ['Centro de los Recursos Naturales Renovables - La Salada', 'Centro de Diseño y Manufactura del Cuero', 'Centro de Formación en Diseño, Confección y Moda', 'Centro para el Desarrollo del Hábitat y la Construcción', 'Centro Tecnológico de Mobiliario', 'Centro Tecnológico del Mobiliario', 'Centro Textil y de Gestión Industrial', 'Centro de Comercio', 'Centro de Servicios de Salud', 'Centro de Servicios y Gestión Empresarial', 'Complejo Tecnológico para la Gestión Agroempresarial', 'Complejo Tecnológico Minero Agroempresarial', 'Complejo Tecnológico, Industrial, Pecuario y Turístico', 'Complejo Tecnológico, Turismo y Agroindustria del Suroeste', 'Occidente Antioqueño', 'Centro de Formación Minero Ambiental'],
+  'Chocó': ['Centro de Recursos Naturales, Industria y Biodiversidad'],
+  'Caldas': ['Centro para la Formación Cafetera', 'Centro de Automatización Industrial', 'Centro de Procesos Industriales y Construcción', 'Centro de Comercio y Servicios', 'Centro Pecuario y Agroempresarial'],
+  'Risaralda': ['Centro Atención Sector Agropecuario', 'Centro de Diseño e Innovación Tecnológica Industrial', 'Centro de Comercio y Servicios'],
+  'Quindío': ['Centro Agroindustrial', 'Centro para el Desarrollo Tecnológico de la Construcción y la Industria', 'Centro de Comercio y Turismo'],
+  'Valle del Cauca': ['Centro Agropecuario de Buga', 'Centro Náutico Pesquero de Buenaventura', 'Centro de Electricidad y Automatización Industrial', 'Centro de Construcción', 'Centro de Diseño Tecnológico Industrial', 'Centro Nacional de Asistencia Técnica a la Industria', 'Centro de Gestión Tecnológica de Servicios', 'Centro de Genética y Biotecnología', 'Centro de Biotecnología Industrial', 'Centro de Industria y la Construcción'],
+  'Nariño': ['Centro Sur Colombiano de Logística Internacional', 'Centro Agroindustrial y Pesquero del Pacífico', 'Centro Internacional de Producción Limpia - Lope'],
+  'Atlántico': ['Centro para el Desarrollo Agroecológico y Agroindustrial', 'Centro Industrial y Comercial', 'Centro Nacional Colombo Alemán', 'Centro de Comercio y Servicios'],
+  'La Guajira': ['Centro Industrial y de Energías Alternativas', 'Centro Agroempresarial y Acuícola'],
+  'Cesar': ['Centro Biotecnológico del Caribe', 'Centro Agroempresarial', 'Centro de Operación y Mantenimiento Minero'],
+  'Norte de Santander': ['Centro de Formación para el Desarrollo Rural y Minero', 'Centro de la Industria, la Empresa y los Servicios'],
+  'Santander': ['Centro de Atención al Sector Agropecuario', 'Centro Industrial de Mantenimiento Integral', 'Centro Industrial de Diseño y Manufactura', 'Centro de Servicios Empresariales y Turísticos', 'Centro Industrial de Mantenimiento y Manufactura', 'Centro Agroempresarial y Turístico de los Andes', 'Centro de Gestión Agroempresarial del Oriente', 'Tecnoparque (1)'],
+  'Boyacá': ['Centro de Desarrollo Agropecuario y Agroindustrial', 'Centro Minero', 'Centro de Gestión Administrativa y Fortalecimiento Empresarial', 'Centro Industrial de Mantenimiento y Manufactura', 'Centro de Formación Agroindustrial y de Servicios'],
+  'Arauca': ['Centro de Gestión y Desarrollo Agroindustrial de Arauca'],
+  'Vichada': ['Centro de Producción y Transformación Agroindustrial de la Orinoquía'],
+  'Casanare': ['Centro Agroindustrial y Fortalecimiento Empresarial de Casanare'],
+  'Guainía': ['Centro Ambiental y Ecoturístico del Nororiente Amazónico'],
+  'Meta': ['Centro de Gestión y Desarrollo Sostenible del Meta', 'Centro de Industria y Servicios del Meta'],
+  'Guaviare': ['Centro de Desarrollo Agroindustrial, Turístico y Tecnológico del Guaviare'],
+  'Vaupés': ['Centro Agropecuario y de Servicios Ambientales - Jirijirimo'],
+  'Caquetá': ['Centro Tecnológico de la Amazonia'],
+  'Amazonas': ['Centro para la Biodiversidad y el Turismo del Amazonas'],
+  'Huila': ['Centro de Formación Agroindustrial', 'Centro de Formación Agroempresarial y Desarrollo Pecuario del Huila', 'Centro de Desarrollo Agroempresarial y Turístico del Huila', 'Centro de la Industria, la Empresa y los Servicios', 'Centro de Gestión y Desarrollo Sostenible Surcolombiano'],
+  'Tolima': ['Centro Agropecuario La Granja', 'Centro de la Industria y la Construcción', 'Centro de Comercio y Servicios'],
+  'Putumayo': ['Centro Agroforestal y Acuícola Arapaima'],
+  'Cauca': ['Centro Agropecuario', 'Centro de Teleinformática y Producción Industrial', 'Centro de Comercio y Servicios'],
+  'Cundinamarca': ['Centro Industrial de Desarrollo Empresarial de Soacha', 'Centro de Desarrollo Agroindustrial y Empresarial', 'Centro Agroecológico y Empresarial', 'Centro de la Tecnología de Diseño y la Productividad Empresarial', 'Centro de Biotecnología Agropecuaria', 'Centro de Desarrollo Agroempresarial de Chía'],
+  'Distrito Capital': ['Centro de Tecnologías para la Construcción y la Madera', 'Centro de Electricidad, Electrónica y Telecomunicaciones', 'Centro de Gestión Industrial', 'Centro de Manufactura en Textil y Cuero', 'Centro de Tecnologías de las Artes Gráficas', 'Centro Metalmecánico', 'Centro de Materiales y Ensayos', 'Centro de Diseño y Metrología', 'Centro para la Industria de la Comunicación Gráfica', 'Centro de Gestión de Mercados, Logística y Tecnologías de la Información', 'Centro de Formación de Talento Humano en Salud', 'Centro de Formación Administrativa', 'Centro de Servicios Financieros', 'Centro Nacional de Hotelería, Turismo y Alimentos', 'Centro de Formación en Actividad Física y Cultura'],
+  'Magdalena': ['Centro Acuícola y Agroindustrial de Gaira', 'Centro de Logística y Promoción Ecoturística del Magdalena'],
+};
+
 function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -85,7 +121,7 @@ const FORM_SCHEMAS = {
   'Ofimática': {
     sections: [
       { title: 'Grupo principal', fields: ['grupo_principal'] },
-      { title: 'Información del equipo', fields: ['descripcion', 'marca', 'modelo', 'fabricante', 'proveedor', 'clasificacion_energetica', 'ano_instalacion'] },
+      { title: 'Información del equipo', fields: ['descripcion', 'clasificacion', 'marca', 'modelo', 'fabricante', 'proveedor', 'clasificacion_energetica', 'ano_instalacion'] },
       { title: 'Valor', fields: ['valor_unitario'] },
       { title: 'Cantidad y uso', fields: ['cantidad', 'horas_uso_diario', 'dias_uso_mes'] },
       { title: 'Energía', fields: ['potencia_kw'] },
@@ -95,7 +131,8 @@ const FORM_SCHEMAS = {
   },
   'Iluminación': {
     sections: [
-      { title: 'Información del equipo', fields: ['tecnologia', 'marca', 'modelo', 'fabricante', 'proveedor', 'ano_instalacion'] },
+      { title: 'Tecnología', fields: ['tecnologia'] },
+      { title: 'Información del equipo', fields: ['marca', 'modelo', 'fabricante', 'proveedor', 'ano_instalacion'] },
       { title: 'Valor', fields: ['valor_unitario'] },
       { title: 'Cantidad y uso', fields: ['cantidad', 'horas_uso_diario', 'dias_uso_mes'] },
       { title: 'Energía', fields: ['potencia_kw'] },
@@ -117,7 +154,8 @@ const FORM_SCHEMAS = {
   'Equipos de Refrigeración': {
     sections: [
       { title: 'Grupo principal', fields: ['grupo_principal'] },
-      { title: 'Información del equipo', fields: ['descripcion', 'tecnologia', 'marca', 'modelo', 'fabricante', 'proveedor', 'clasificacion_energetica', 'ano_instalacion'] },
+      { title: 'Información del equipo', fields: ['descripcion', 'marca', 'modelo', 'fabricante', 'proveedor', 'ano_instalacion'] },
+      { title: 'Tecnología', fields: ['tecnologia', 'clasificacion_energetica'] },
       { title: 'Valor', fields: ['valor_unitario'] },
       { title: 'Gas refrigerante', fields: ['refrigerante', 'capacidad_gas_kg', 'total_gas_kg'] },
       { title: 'Cantidad y uso', fields: ['cantidad', 'horas_uso_diario', 'dias_uso_mes'] },
@@ -128,8 +166,8 @@ const FORM_SCHEMAS = {
   },
   'Soporte Gases Refrigerantes': {
     sections: [
-      { title: 'Ubicación y fotos', fields: ['ubicacion', 'evidencias'] },
       { title: 'Gas', fields: ['tipo_combustible', 'capacidad_gas_gr'] },
+      { title: 'Ubicación y fotos', fields: ['ubicacion', 'evidencias'] },
     ],
   },
   'Consumo de Combustible': {
@@ -138,6 +176,7 @@ const FORM_SCHEMAS = {
       { title: 'Información del equipo', fields: ['descripcion', 'marca', 'modelo'] },
       { title: 'Consumo', fields: ['tipo_combustible', 'cantidad', 'consumo_combustible_gal'] },
       { title: 'Uso', fields: ['horas_uso_diario', 'dias_uso_mes', 'uso'] },
+      { title: 'Ubicación y fotos', fields: ['ubicacion', 'evidencias'] },
       { title: 'Observación', fields: ['observaciones'] },
     ],
   },
@@ -145,7 +184,8 @@ const FORM_SCHEMAS = {
     sections: [
       { title: 'Información del equipo', fields: ['marca', 'modelo', 'cantidad'] },
       { title: 'Técnica', fields: ['potencia_kw', 'tipo_combustible', 'consumo_combustible_gal'] },
-      { title: 'Observación', fields: ['observaciones', 'ubicacion'] },
+      { title: 'Ubicación y fotos', fields: ['ubicacion', 'evidencias'] },
+      { title: 'Observación', fields: ['observaciones'] },
     ],
   },
   'Gasodomésticos': {
@@ -155,6 +195,7 @@ const FORM_SCHEMAS = {
       { title: 'Valor', fields: ['valor_unitario'] },
       { title: 'Cantidad y uso', fields: ['cantidad', 'horas_uso_diario', 'dias_uso_mes'] },
       { title: 'Gas', fields: ['tipo_combustible', 'consumo_gas_m3'] },
+      { title: 'Ubicación y fotos', fields: ['ubicacion', 'evidencias'] },
       { title: 'Observación', fields: ['observaciones'] },
     ],
   },
@@ -185,6 +226,8 @@ const FIELD_META = {
   ubicacion: { label: 'Ubicación', type: 'text', placeholder: 'Ej: Sala de servidores, Oficina 101, Planta 2, etc.' },
   uso: { label: 'Uso', type: 'text', placeholder: 'Ej: Almacenamiento de datos, Oficina, Producción, Refrigeración, etc.' },
   observaciones: { label: 'Observación', type: 'textarea', placeholder: 'Ej: Equipo en buen estado, requiere mantenimiento mensual, etc.' },
+  tecnologia: { label: 'Tecnología', placeholder: 'Ej: Para luminarias: LED, Fluorescente, Halógena. Para refrigeración: Inverter, Convencional, etc.' },
+  clasificacion: { label: 'Clasificación', placeholder: 'Ej: Portátil, de escritorio, todo en uno, etc.' },
   evidencias: { label: 'Evidencia fotográfica', type: 'files' },
 };
 
@@ -368,8 +411,12 @@ function Detail({sede, onReload}){
   const [editingId, setEditingId] = useState(null);
   const [selectedTipo, setSelectedTipo] = useState(INVENTORY_TYPES[0]?.key || '');
   const [viewItem, setViewItem] = useState(null);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   const [form, setForm] = useState({
     hoja_tipo: selectedTipo,
+    regional: '',
+    centro_formacion: '',
+    sede_nombre: '',
     grupo_principal: '',
     descripcion: '',
     marca: '',
@@ -398,6 +445,9 @@ function Detail({sede, onReload}){
   function resetForm(){
     setForm({
       hoja_tipo: selectedTipo || INVENTORY_TYPES[0]?.key || '',
+      regional: '',
+      centro_formacion: '',
+      sede_nombre: '',
       grupo_principal: '',
       descripcion: '',
       marca: '',
@@ -641,6 +691,37 @@ function Detail({sede, onReload}){
                   </div>
                 </div>
 
+                <div className="form-section">
+                  <h4 className="form-section-title">Información de la sede</h4>
+                  <div className="form-row">
+                    <div className="form-group" style={{flex:1}}>
+                      <label>Regional</label>
+                      <select value={form.regional || ''} onChange={e => {
+                        updateForm('regional', e.target.value);
+                        updateForm('centro_formacion', '');
+                      }}>
+                        <option value="">Seleccionar regional</option>
+                        {Object.keys(REGIONALES_CENTROS).sort().map((regional, idx) => (
+                          <option key={idx} value={regional}>{regional}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{flex:1}}>
+                      <label>Centro de formación</label>
+                      <select value={form.centro_formacion || ''} onChange={e => updateForm('centro_formacion', e.target.value)} disabled={!form.regional}>
+                        <option value="">Seleccionar centro</option>
+                        {form.regional && REGIONALES_CENTROS[form.regional] && REGIONALES_CENTROS[form.regional].map((centro, idx) => (
+                          <option key={idx} value={centro}>{centro}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{flex:1}}>
+                      <label>Sede</label>
+                      <input type="text" placeholder="Ej: Sede principal, Sede Bogotá" value={form.sede_nombre || ''} onChange={e => updateForm('sede_nombre', e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+
                 {(() => {
                   const schema = FORM_SCHEMAS[form.hoja_tipo] || FORM_SCHEMAS[selectedTipo];
                   if(!schema) return <div className="empty">Selecciona un tipo de formulario para ver los campos disponibles.</div>;
@@ -728,13 +809,14 @@ function Detail({sede, onReload}){
                   <label>Consumo mensual (kWh)</label>
                   <div className="view-field">{formatNumber(viewItem.consumo_mensual_kwh)}</div>
                 </div>
-                <div className="form-group" style={{flex:1}}>
+                <div className="form-group" style={{flex:1, display:'flex', flexDirection:'column'}}>
                   <label>Fotos</label>
                   {Array.isArray(viewItem.evidencias) && viewItem.evidencias.length ? (
-                    <div className="evidencias-preview">
+                    <div className="evidencias-preview-detail">
                       {viewItem.evidencias.map((img, idx)=>(
-                        <div className="thumb" key={idx}>
-                          <img src={img} alt={`Evidencia ${idx+1}`} />
+                        <div key={idx} className="thumb-detail" style={{cursor:'pointer', position:'relative'}} onClick={()=>setFullscreenImage(img)} title="Presiona para ver en pantalla completa">
+                          <img src={img} alt={`Evidencia ${idx+1}`} style={{width:'100%', height:'100%', objectFit:'cover', borderRadius:8}} />
+                          <div style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, opacity:0, transition:'opacity 0.3s'}} className="zoom-indicator">🔍</div>
                         </div>
                       ))}
                     </div>
@@ -747,6 +829,15 @@ function Detail({sede, onReload}){
               <div className="modal-actions">
                 <button className="btn btn-secondary" onClick={()=>setViewItem(null)}>Cerrar</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {fullscreenImage && (
+          <div className="modal-overlay" onClick={()=>setFullscreenImage(null)} style={{background:'rgba(0,0,0,0.95)', zIndex:2000}}>
+            <div style={{position:'relative', width:'90vw', height:'90vh', display:'flex', alignItems:'center', justifyContent:'center'}} onClick={e=>e.stopPropagation()}>
+              <button className="btn btn-secondary" onClick={()=>setFullscreenImage(null)} style={{position:'absolute', top:20, right:20, zIndex:2001, padding:'10px 16px', fontSize:14}}>✕ Cerrar</button>
+              <img src={fullscreenImage} alt="Foto ampliada" style={{maxWidth:'100%', maxHeight:'100%', objectFit:'contain', borderRadius:12}} />
             </div>
           </div>
         )}
