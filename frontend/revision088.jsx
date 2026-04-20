@@ -1093,13 +1093,66 @@ function RevisionEnergetica088({ sede, onBack }) {
                     <tr key={index}>
                       <td><select className="form-group" value={row.fecha || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], fecha: e.target.value }; updateJsonField('matriz_energetica', next); }} style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '13px' }}><option value="">Seleccionar mes</option>{meses.map((mes, i) => <option key={i} value={mes}>{mes}</option>)}</select></td>
                       <td><input className="form-group" type="number" step="0.1" placeholder="kWh" value={row.electrica_kwh || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_kwh: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.electrica_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], electrica_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input
+                        className="form-group"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="COP"
+                        value={row.electrica_cop !== undefined && row.electrica_cop !== null && row.electrica_cop !== '' ? Number(row.electrica_cop).toLocaleString('es-CO') : ''}
+                        onChange={e => {
+                          // Eliminar puntos y caracteres no numéricos
+                          const raw = e.target.value.replace(/\D/g, '');
+                          const value = raw ? parseInt(raw, 10) : 0;
+                          const next = [...matriz];
+                          next[index] = { ...next[index], electrica_cop: value };
+                          updateJsonField('matriz_energetica', next);
+                        }}
+                      /></td>
                       <td><input className="form-group" type="number" step="0.1" placeholder="m³" value={row.gas_m3 || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gas_m3: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.gas_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gas_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input
+                        className="form-group"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="COP"
+                        value={row.gas_cop !== undefined && row.gas_cop !== null && row.gas_cop !== '' ? Number(row.gas_cop).toLocaleString('es-CO') : ''}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          const value = raw ? parseInt(raw, 10) : 0;
+                          const next = [...matriz];
+                          next[index] = { ...next[index], gas_cop: value };
+                          updateJsonField('matriz_energetica', next);
+                        }}
+                      /></td>
                       <td><input className="form-group" type="number" step="0.1" placeholder="gal" value={row.acpm_gal || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], acpm_gal: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.acpm_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], acpm_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input
+                        className="form-group"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="COP"
+                        value={row.acpm_cop !== undefined && row.acpm_cop !== null && row.acpm_cop !== '' ? Number(row.acpm_cop).toLocaleString('es-CO') : ''}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          const value = raw ? parseInt(raw, 10) : 0;
+                          const next = [...matriz];
+                          next[index] = { ...next[index], acpm_cop: value };
+                          updateJsonField('matriz_energetica', next);
+                        }}
+                      /></td>
                       <td><input className="form-group" type="number" step="0.1" placeholder="gal" value={row.gasolina_gal || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gasolina_gal: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
-                      <td><input className="form-group" type="number" step="100" placeholder="COP" value={row.gasolina_cop || ''} onChange={e => { const next = [...matriz]; next[index] = { ...next[index], gasolina_cop: parseFloat(e.target.value) || 0 }; updateJsonField('matriz_energetica', next); }} /></td>
+                      <td><input
+                        className="form-group"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="COP"
+                        value={row.gasolina_cop !== undefined && row.gasolina_cop !== null && row.gasolina_cop !== '' ? Number(row.gasolina_cop).toLocaleString('es-CO') : ''}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/\D/g, '');
+                          const value = raw ? parseInt(raw, 10) : 0;
+                          const next = [...matriz];
+                          next[index] = { ...next[index], gasolina_cop: value };
+                          updateJsonField('matriz_energetica', next);
+                        }}
+                      /></td>
                       <td><button className="btn btn-delete" onClick={() => { if (!confirm('¿Estás seguro que deseas eliminar este registro?')) return; if (!confirm('Se eliminará permanentemente. ¿Deseas continuar?')) return; const next = [...matriz]; next.splice(index, 1); updateJsonField('matriz_energetica', next); }}>Eliminar</button></td>
                     </tr>
                   ))}
