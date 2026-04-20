@@ -463,7 +463,19 @@ function RevisionEnergetica088({ sede, onBack }) {
     try {
       const energyEl = document.getElementById('grafico-matriz-energia');
       const costEl = document.getElementById('grafico-matriz-costo');
-      const energyData = [matrixTotals.electrica, matrixTotals.gas, matrixTotals.acpm, matrixTotals.gasolina];
+      
+      // Factores de conversión a kWh (para poder comparar en la misma unidad)
+      const kWhPerM3Gas = 10.2; // 1 m³ de gas natural ≈ 10.2 kWh
+      const kWhPerGalACPM = 12.75; // 1 galón de ACPM ≈ 12.75 kWh
+      const kWhPerGalGasolina = 11.4; // 1 galón de gasolina ≈ 11.4 kWh
+      
+      // Convertir todas las energías a kWh equivalente
+      const electricaKwh = matrixTotals.electrica;
+      const gasKwh = matrixTotals.gas * kWhPerM3Gas;
+      const acpmKwh = matrixTotals.acpm * kWhPerGalACPM;
+      const gasolinaKwh = matrixTotals.gasolina * kWhPerGalGasolina;
+      
+      const energyData = [electricaKwh, gasKwh, acpmKwh, gasolinaKwh];
       const costData = [matrixTotals.electricaCost, matrixTotals.gasCost, matrixTotals.acpmCost, matrixTotals.gasolinaCost];
       const colors = ['#0B7D4B', '#1ab66f', '#ff9f1c', '#3c8dbc'];
       
@@ -512,7 +524,7 @@ function RevisionEnergetica088({ sede, onBack }) {
                     const total = energyData.reduce((a, b) => a + b, 0);
                     const value = context.parsed;
                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
-                    return `${context.label}: ${value.toFixed(2)} (${percentage}%)`;
+                    return `${context.label}: ${value.toFixed(2)} kWh eq. (${percentage}%)`;
                   }
                 }
               },
@@ -566,7 +578,7 @@ function RevisionEnergetica088({ sede, onBack }) {
                     const total = costData.reduce((a, b) => a + b, 0);
                     const value = context.parsed;
                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
-                    return `${context.label}: $${value.toFixed(0)} (${percentage}%)`;
+                    return `${context.label}: $ ${Number(value).toLocaleString('es-CO')} COP (${percentage}%)`;
                   }
                 }
               },
@@ -1066,13 +1078,13 @@ function RevisionEnergetica088({ sede, onBack }) {
                   <tr>
                     <th>Mes</th>
                     <th>kWh</th>
-                    <th>COP</th>
+                    <th>$ COP</th>
                     <th>Gas m³</th>
-                    <th>COP</th>
+                    <th>$ COP</th>
                     <th>ACPM gal</th>
-                    <th>COP</th>
+                    <th>$ COP</th>
                     <th>Gasolina gal</th>
-                    <th>COP</th>
+                    <th>$ COP</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -1096,13 +1108,25 @@ function RevisionEnergetica088({ sede, onBack }) {
                   <tr>
                     <th>Total</th>
                     <th>{matrixTotals.electrica}</th>
-                    <th>{matrixTotals.electricaCost}</th>
+                    <th>$ {Number(matrixTotals.electricaCost).toLocaleString('es-CO')}</th>
                     <th>{matrixTotals.gas}</th>
-                    <th>{matrixTotals.gasCost}</th>
+                    <th>$ {Number(matrixTotals.gasCost).toLocaleString('es-CO')}</th>
                     <th>{matrixTotals.acpm}</th>
-                    <th>{matrixTotals.acpmCost}</th>
+                    <th>$ {Number(matrixTotals.acpmCost).toLocaleString('es-CO')}</th>
                     <th>{matrixTotals.gasolina}</th>
-                    <th>{matrixTotals.gasolinaCost}</th>
+                    <th>$ {Number(matrixTotals.gasolinaCost).toLocaleString('es-CO')}</th>
+                    <th></th>
+                  </tr>
+                  <tr style={{ background: '#e8f5e9', fontWeight: 700, fontSize: 13 }}>
+                    <th>Total (Tera Julios)</th>
+                    <th>{((matrixTotals.electrica * 3.6) / 1000000).toFixed(6)}</th>
+                    <th></th>
+                    <th>{((matrixTotals.gas * 36.72) / 1000000).toFixed(6)}</th>
+                    <th></th>
+                    <th>{((matrixTotals.acpm * 45.9) / 1000000).toFixed(6)}</th>
+                    <th></th>
+                    <th>{((matrixTotals.gasolina * 41.04) / 1000000).toFixed(6)}</th>
+                    <th></th>
                     <th></th>
                   </tr>
                 </tfoot>
