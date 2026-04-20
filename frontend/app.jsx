@@ -258,6 +258,35 @@ function downloadCsv(items = [], fileName = 'inventario.csv'){
   document.body.removeChild(link);
 }
 
+function downloadExcel(items = [], fileName = 'inventario.xlsx'){
+  if(typeof XLSX === 'undefined'){
+    alert('XLSX no está disponible. Descargando como CSV en su lugar.');
+    downloadCsv(items, 'inventario.csv');
+    return;
+  }
+  
+  const headers = ['Tipo', 'Regional', 'Centro', 'Sede', 'Descripción', 'Marca', 'Modelo', 'Cantidad', 'Potencia (kW)', 'Consumo (kWh/mes)', 'Ubicación', 'Observaciones'];
+  const rows = items.map(item => [
+    item.hoja_tipo,
+    item.regional || '',
+    item.centro_formacion || '',
+    item.sede_nombre || '',
+    item.descripcion,
+    item.marca,
+    item.modelo,
+    item.cantidad,
+    item.potencia_kw,
+    item.consumo_mensual_kwh,
+    item.ubicacion,
+    item.observaciones
+  ]);
+  
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+  XLSX.writeFile(wb, fileName);
+}
+
 function readImageAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -412,6 +441,8 @@ function Detail({sede, onReload}){
   const [selectedTipo, setSelectedTipo] = useState(INVENTORY_TYPES[0]?.key || '');
   const [viewItem, setViewItem] = useState(null);
   const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [filterRegional, setFilterRegional] = useState('');
+  const [filterCentro, setFilterCentro] = useState('');
   const [form, setForm] = useState({
     hoja_tipo: selectedTipo,
     regional: '',
@@ -508,7 +539,12 @@ function Detail({sede, onReload}){
   const { valor_total, horas_uso_mes, potencia_total_kw, consumo_mensual_kwh, calculo_gas_kg } = computeCalculated();
 
   function getFilteredInventario(){
-    return inventario.filter(i => !selectedTipo || i.hoja_tipo === selectedTipo);
+    return inventario.filter(i => {
+      const tipoCumple = !selectedTipo || i.hoja_tipo === selectedTipo;
+      const regionalCumple = !filterRegional || i.regional === filterRegional;
+      const centroCumple = !filterCentro || i.centro_formacion === filterCentro;
+      return tipoCumple && regionalCumple && centroCumple;
+    });
   }
 
   function renderField(fieldKey){
@@ -519,12 +555,27 @@ function Detail({sede, onReload}){
       return (
         <div className="form-group" key={fieldKey}>
           <label>{meta.label}</label>
-          <input type="file" accept="image/*" capture="environment" multiple onChange={async e=>{
-            const files = Array.from(e.target.files || []);
-            if(!files.length) return;
-            const dataUrls = await Promise.all(files.map(f=>readImageAsDataUrl(f)));
-            updateForm('evidencias', [...(form.evidencias||[]), ...dataUrls]);
-          }} />
+          <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+            <input type="file" accept="image/*" capture="environment" multiple onChange={async e=>{
+              const files = Array.from(e.target.files || []);
+              if(!files.length) return;
+              const dataUrls = await Promise.all(files.map(f=>readImageAsDataUrl(f)));
+              updateForm('evidencias', [...(form.evidencias||[]), ...dataUrls]);
+            }} />
+            <button type="button" className="btn btn-secondary" onClick={()=>{
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.capture = 'environment';
+              input.onchange = async (e) => {
+                const files = Array.from(e.target.files || []);
+                if(!files.length) return;
+                const dataUrls = await Promise.all(files.map(f=>readImageAsDataUrl(f)));
+                updateForm('evidencias', [...(form.evidencias||[]), ...dataUrls]);
+              };
+              input.click();
+            }}>📷 Cámara</button>
+          </div>
           {Array.isArray(form.evidencias) && form.evidencias.length > 0 && (
             <div className="evidencias-preview">
               {form.evidencias.map((img, idx)=>(
@@ -587,23 +638,38 @@ function Detail({sede, onReload}){
     try{
       const body = { ...form };
       body.hoja_tipo = body.hoja_tipo || selectedTipo;
-      body.cantidad = Number(body.cantidad) || 0;
-      body.valor_unitario = Number(body.valor_unitario) || 0;
-      body.horas_uso_diario = Number(body.horas_uso_diario) || 0;
-      body.dias_uso_mes = Number(body.dias_uso_mes) || 0;
-      body.potencia_kw = Number(body.potencia_kw) || 0;
-      body.capacidad_gas_kg = Number(body.capacidad_gas_kg) || 0;
-      body.total_gas_kg = Number(body.total_gas_kg) || 0;
-      body.capacidad_gas_gr = Number(body.capacidad_gas_gr) || 0;
-      body.consumo_combustible_gal = Number(body.consumo_combustible_gal) || 0;
-      body.consumo_gas_m3 = Number(body.consumo_gas_m3) || 0;
+
+      // Ensure all numeric fields are valid numbers
+      const numericFields = [
+        'cantidad', 'valor_unitario', 'horas_uso_diario', 'dias_uso_mes', 'potencia_kw',
+        'capacidad_gas_kg', 'total_gas_kg', 'capacidad_gas_gr', 'consumo_combustible_gal', 'consumo_gas_m3'
+      ];
+
+      numericFields.forEach(field => {
+        const value = Number(body[field]);
+        body[field] = isNaN(value) ? 0 : value;
+      });
+
       body.evidencias = Array.isArray(body.evidencias) ? body.evidencias : [];
 
       if(body.hoja_tipo === 'Soporte Gases Refrigerantes'){
         // El campo en gramos se almacena como Kg en el backend (capacidad_gas_kg)
         body.capacidad_gas_kg = (Number(body.capacidad_gas_gr) || 0) / 1000;
       }
-      
+
+      // Ensure string fields are not null
+      const stringFields = [
+        'regional', 'centro_formacion', 'sede_nombre', 'grupo_principal', 'descripcion',
+        'marca', 'modelo', 'fabricante', 'proveedor', 'observaciones', 'clasificacion_energetica',
+        'clasificacion_equipo', 'tipo_combustible', 'uso', 'ubicacion', 'tecnologia', 'refrigerante'
+      ];
+
+      stringFields.forEach(field => {
+        body[field] = body[field] || '';
+      });
+
+      console.log('DEBUG: Sending body:', body);
+
       let url, method;
       if(editingId){
         url = `/api/inventario/${editingId}`;
@@ -612,13 +678,17 @@ function Detail({sede, onReload}){
         url = `/api/sedes/${sede.id}/inventario`;
         method = 'POST';
       }
-      
+
       const res = await fetch(url, {
         method,
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify(body)
       });
-      if(!res.ok) throw new Error('Error guardando');
+      if(!res.ok) {
+        const errorText = await res.text();
+        console.error('Server error:', errorText);
+        throw new Error(`Error guardando: ${res.status} ${errorText}`);
+      }
       setShowForm(false);
       resetForm();
       onReload && onReload(sede.id);
@@ -665,11 +735,33 @@ function Detail({sede, onReload}){
                   {INVENTORY_TYPES.map(t=> <option key={t.key} value={t.key}>{t.label}</option>)}
                 </select>
               </div>
+              <div className="filter-group">
+                <label>Regional</label>
+                <select value={filterRegional} onChange={e=>{
+                  setFilterRegional(e.target.value);
+                  setFilterCentro('');
+                }}>
+                  <option value="">Todas</option>
+                  {Object.keys(REGIONALES_CENTROS).sort().map((regional, idx) => (
+                    <option key={idx} value={regional}>{regional}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-group">
+                <label>Centro</label>
+                <select value={filterCentro} onChange={e=>setFilterCentro(e.target.value)} disabled={!filterRegional}>
+                  <option value="">Todos</option>
+                  {filterRegional && REGIONALES_CENTROS[filterRegional] && REGIONALES_CENTROS[filterRegional].map((centro, idx) => (
+                    <option key={idx} value={centro}>{centro}</option>
+                  ))}
+                </select>
+              </div>
               </div>
 
               <div className="inventory-actions">
                 <button className="btn btn-primary" onClick={()=>{ setShowForm(true); resetForm(); }}>➕ Agregar equipo</button>
-                <div style={{color:'#555', fontSize:12}}>{inventario.length} equipos</div>
+                <button className="btn btn-secondary" onClick={()=>downloadExcel(getFilteredInventario(), 'inventario_sena.xlsx')}>📊 Exportar Excel</button>
+                <div style={{color:'#555', fontSize:12}}>{getFilteredInventario().length} / {inventario.length} equipos</div>
               </div>
             </div>
           </div>
@@ -758,72 +850,108 @@ function Detail({sede, onReload}){
 
         {viewItem && (
           <div className="modal-overlay" onClick={()=>setViewItem(null)}>
-            <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal" style={{maxWidth:'900px', maxHeight:'90vh', overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
               <h2>👁️ Detalles del Equipo</h2>
-              <div className="form-row" style={{gap:16}}>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Tipo</label>
-                  <div className="view-field">{viewItem.hoja_tipo}</div>
-                </div>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Descripción</label>
-                  <div className="view-field">{viewItem.descripcion}</div>
+
+              <div className="form-section">
+                <h4>Información de la Sede</h4>
+                <div className="form-row">
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Regional</label>
+                    <div className="view-field">{viewItem.regional || '—'}</div>
+                  </div>
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Centro de formación</label>
+                    <div className="view-field">{viewItem.centro_formacion || '—'}</div>
+                  </div>
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Sede</label>
+                    <div className="view-field">{viewItem.sede_nombre || '—'}</div>
+                  </div>
                 </div>
               </div>
 
-              <div className="form-row" style={{gap:16}}>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Marca</label>
-                  <div className="view-field">{viewItem.marca || '—'}</div>
+              <div className="form-section">
+                <h4>Información del Equipo</h4>
+                <div className="form-row">
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Tipo</label>
+                    <div className="view-field">{viewItem.hoja_tipo}</div>
+                  </div>
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Descripción</label>
+                    <div className="view-field">{viewItem.descripcion}</div>
+                  </div>
                 </div>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Modelo</label>
-                  <div className="view-field">{viewItem.modelo || '—'}</div>
-                </div>
-              </div>
 
-              <div className="form-row" style={{gap:16}}>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Grupo</label>
-                  <div className="view-field">{viewItem.grupo_principal || '—'}</div>
+                <div className="form-row">
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Marca</label>
+                    <div className="view-field">{viewItem.marca || '—'}</div>
+                  </div>
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Modelo</label>
+                    <div className="view-field">{viewItem.modelo || '—'}</div>
+                  </div>
                 </div>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Ubicación</label>
-                  <div className="view-field">{viewItem.ubicacion || '—'}</div>
-                </div>
-              </div>
 
-              <div className="form-row" style={{gap:16}}>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Cantidad</label>
-                  <div className="view-field">{viewItem.cantidad}</div>
+                <div className="form-row">
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Grupo Principal</label>
+                    <div className="view-field">{viewItem.grupo_principal || '—'}</div>
+                  </div>
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Ubicación</label>
+                    <div className="view-field">{viewItem.ubicacion || '—'}</div>
+                  </div>
                 </div>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Potencia (kW)</label>
-                  <div className="view-field">{viewItem.potencia_kw}</div>
-                </div>
-              </div>
 
-              <div className="form-row" style={{gap:16}}>
-                <div className="form-group" style={{flex:1}}>
-                  <label>Consumo mensual (kWh)</label>
-                  <div className="view-field">{formatNumber(viewItem.consumo_mensual_kwh)}</div>
+                <div className="form-row">
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Cantidad</label>
+                    <div className="view-field">{viewItem.cantidad || '—'}</div>
+                  </div>
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Potencia (kW)</label>
+                    <div className="view-field">{viewItem.potencia_kw || '—'}</div>
+                  </div>
                 </div>
-                <div className="form-group" style={{flex:1, display:'flex', flexDirection:'column'}}>
-                  <label>Fotos</label>
-                  {Array.isArray(viewItem.evidencias) && viewItem.evidencias.length ? (
-                    <div className="evidencias-preview-detail">
-                      {viewItem.evidencias.map((img, idx)=>(
-                        <div key={idx} className="thumb-detail" style={{cursor:'pointer', position:'relative'}} onClick={()=>setFullscreenImage(img)} title="Presiona para ver en pantalla completa">
-                          <img src={img} alt={`Evidencia ${idx+1}`} style={{width:'100%', height:'100%', objectFit:'cover', borderRadius:8}} />
-                          <div style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, opacity:0, transition:'opacity 0.3s'}} className="zoom-indicator">🔍</div>
-                        </div>
-                      ))}
+
+                <div className="form-row">
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Consumo mensual (kWh)</label>
+                    <div className="view-field">{formatNumber(viewItem.consumo_mensual_kwh)}</div>
+                  </div>
+                  <div className="form-group" style={{flex:1}}>
+                    <label>Valor Unitario</label>
+                    <div className="view-field">${formatNumber(viewItem.valor_unitario)} COP</div>
+                  </div>
+                </div>
+
+                {viewItem.observaciones && (
+                  <div className="form-row">
+                    <div className="form-group" style={{flex:1}}>
+                      <label>Observaciones</label>
+                      <div className="view-field">{viewItem.observaciones}</div>
                     </div>
-                  ) : (
-                    <div className="view-field">No hay fotos</div>
-                  )}
-                </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-section">
+                <h4>Evidencia Fotográfica</h4>
+                {Array.isArray(viewItem.evidencias) && viewItem.evidencias.length ? (
+                  <div className="evidencias-preview-detail" style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(150px, 1fr))', gap:12}}>
+                    {viewItem.evidencias.map((img, idx)=>(
+                      <div key={idx} className="thumb-detail" style={{cursor:'pointer', position:'relative', borderRadius:8, overflow:'hidden'}} onClick={()=>setFullscreenImage(img)} title="Presiona para ver en pantalla completa">
+                        <img src={img} alt={`Evidencia ${idx+1}`} style={{width:'100%', height:'150px', objectFit:'cover', borderRadius:8}} />
+                        <div style={{position:'absolute', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0)', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, opacity:0, transition:'opacity 0.3s', hover:{opacity:1}}} className="zoom-indicator">🔍</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="view-field">No hay fotos</div>
+                )}
               </div>
 
               <div className="modal-actions">

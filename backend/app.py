@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List, Optional
 import os
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, ForeignKey, text
@@ -80,6 +80,9 @@ class InventarioItem(Base):
 
     # General metadata
     hoja_tipo = Column(String, default='')  # categoría / hoja (iluminación, TIC, etc.)
+    regional = Column(String, default='')
+    centro_formacion = Column(String, default='')
+    sede_nombre = Column(String, default='')
     grupo_principal = Column(String, default='')
     descripcion = Column(String, default='')
     marca = Column(String, default='')
@@ -390,6 +393,9 @@ class SedeOut(BaseModel):
 
 class InventarioItemBase(BaseModel):
     hoja_tipo: str = ''
+    regional: str = ''
+    centro_formacion: str = ''
+    sede_nombre: str = ''
     grupo_principal: str = ''
     descripcion: str = ''
     marca: str = ''
@@ -423,6 +429,9 @@ class InventarioItemBase(BaseModel):
     # Legacy fields (for backwards compatibility with older data)
     potencia_unidad_kw: float = 0.0
     consumo_estimado_kwh_mes: float = 0.0
+
+    class Config:
+        from_attributes = True
 
 class InventarioItemCreate(InventarioItemBase):
     pass
@@ -522,6 +531,9 @@ def inventario_to_dict(item: InventarioItem) -> dict:
         'id': item.id,
         'sede_id': item.sede_id,
         'hoja_tipo': item.hoja_tipo,
+        'regional': item.regional,
+        'centro_formacion': item.centro_formacion,
+        'sede_nombre': item.sede_nombre,
         'grupo_principal': item.grupo_principal,
         'descripcion': item.descripcion,
         'marca': item.marca,
@@ -658,6 +670,10 @@ def create_inventario_item(sede_id: int, payload: InventarioItemCreate):
         s = session.query(Sede).filter(Sede.id == sede_id).first()
         if not s:
             raise HTTPException(status_code=404, detail='Sede no encontrada')
+
+        # Log the incoming payload for debugging
+        print(f"DEBUG: Received payload: {payload.dict()}")
+
         data = payload.dict()
         data = compute_inventory_calculations(data)
         item = InventarioItem(sede_id=sede_id, **data)
@@ -668,6 +684,9 @@ def create_inventario_item(sede_id: int, payload: InventarioItemCreate):
         session.commit()
         session.refresh(item)
         return inventario_to_dict(item)
+    except Exception as e:
+        print(f"DEBUG: Error creating inventory item: {e}")
+        raise
     finally:
         session.close()
 
