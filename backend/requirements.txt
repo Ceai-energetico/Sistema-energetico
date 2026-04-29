@@ -5,3 +5,7 @@ pydantic
 jinja2
 pandas
 python-multipart
+psycopg2-binary
+python-dotenv
+gunicorn
+Pillow
