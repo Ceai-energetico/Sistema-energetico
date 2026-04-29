@@ -202,8 +202,19 @@ class RevisionEnergetica088(Base):
     fecha_creacion = Column(String, default="")
     fecha_modificacion = Column(String, default="")
 
-# Create tables
-Base.metadata.create_all(bind=ENGINE)
+# Function to create tables (will be called from startup event)
+def init_database():
+    """Initialize database tables. Called on startup."""
+    try:
+        Base.metadata.create_all(bind=ENGINE)
+        
+        # Ensure inventory table has the extended schema (SQLite only)
+        if DATABASE_URL.startswith('sqlite'):
+            ensure_inventario_schema(ENGINE)
+            ensure_revision088_schema(ENGINE)
+    except Exception as e:
+        print(f"Warning: Could not initialize database: {e}")
+        # Continue anyway - tables might already exist
 
 # Ensure inventory table has the extended schema (add missing columns when upgrading)
 def ensure_inventario_schema(engine):
@@ -236,26 +247,30 @@ def ensure_inventario_schema(engine):
         'clasificacion_equipo': 'TEXT DEFAULT ""',
         'evidencias': 'TEXT DEFAULT "[]"',
     }
-    with engine.connect() as conn:
-        existing = [r[1] for r in conn.execute(text("PRAGMA table_info(inventario)"))]
-        for col, col_def in required.items():
-            if col not in existing:
-                conn.execute(text(f"ALTER TABLE inventario ADD COLUMN {col} {col_def}"))
-
-ensure_inventario_schema(ENGINE)
+    try:
+        with engine.connect() as conn:
+            existing = [r[1] for r in conn.execute(text("PRAGMA table_info(inventario)"))]
+            for col, col_def in required.items():
+                if col not in existing:
+                    conn.execute(text(f"ALTER TABLE inventario ADD COLUMN {col} {col_def}"))
+            conn.commit()
+    except Exception as e:
+        print(f"Warning: Could not update inventario schema: {e}")
 
 
 def ensure_revision088_schema(engine):
     required = {
         'matriz_energetica': 'TEXT DEFAULT "[]"',
     }
-    with engine.connect() as conn:
-        existing = [r[1] for r in conn.execute(text("PRAGMA table_info(revisiones_energeticas_088)"))]
-        for col, col_def in required.items():
-            if col not in existing:
-                conn.execute(text(f"ALTER TABLE revisiones_energeticas_088 ADD COLUMN {col} {col_def}"))
-
-ensure_revision088_schema(ENGINE)
+    try:
+        with engine.connect() as conn:
+            existing = [r[1] for r in conn.execute(text("PRAGMA table_info(revisiones_energeticas_088)"))]
+            for col, col_def in required.items():
+                if col not in existing:
+                    conn.execute(text(f"ALTER TABLE revisiones_energeticas_088 ADD COLUMN {col} {col_def}"))
+            conn.commit()
+    except Exception as e:
+        print(f"Warning: Could not update revision088 schema: {e}")
 
 # FastAPI app
 app = FastAPI(title="Sistema Energetico - API")
@@ -393,9 +408,13 @@ def init_demo(session):
     session.add(opp)
     session.commit()
 
-# Startup event to initialize demo DB if empty
+# Startup event to initialize DB and demo data
 @app.on_event('startup')
 def startup_event():
+    # Initialize database tables first
+    init_database()
+    
+    # Then initialize demo data if needed
     session = SessionLocal()
     try:
         init_demo(session)
