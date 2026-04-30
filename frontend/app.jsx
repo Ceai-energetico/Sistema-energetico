@@ -320,7 +320,6 @@ function Header({ user, onLogout, sedes, selectedId, onSelect, activeView, onVie
             <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: isMobileDevice() ? '40px' : '70px', height: isMobileDevice() ? '40px' : '70px', borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.95)', padding: isMobileDevice() ? '3px' : '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
             <div className="brand-text-container" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div className="brand-text-main" style={{ fontSize: isMobileDevice() ? '12px' : '28px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.5px', margin: '0', lineHeight: '1.3', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}> Aplicativo Revisión Energética</div>
-              {!isMobileDevice() && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.3'}}> Energética</div>}
               <div className="brand-text-sub" style={{ fontSize: isMobileDevice() ? '7px' : '12px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: '6px 0 0 0', letterSpacing: isMobileDevice() ? '-0.3px' : '0.3px', lineHeight: '1.4', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}> laboratorio Servicios Tecnológicos CEAI</div>
             </div>
           </div>
