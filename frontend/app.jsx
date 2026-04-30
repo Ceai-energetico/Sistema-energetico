@@ -315,15 +315,16 @@ function Header({ user, onLogout, sedes, selectedId, onSelect, activeView, onVie
   return (
     <>
       <header className="header" style={{ background: 'linear-gradient(135deg, #0B7D4B 0%, #1ab66f 100%)', boxShadow: '0 8px 32px rgba(11, 125, 75, 0.15)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobileDevice() ? '8px' : '24px', padding: isMobileDevice() ? '10px 12px' : '20px 32px', width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobileDevice() ? '6px' : '24px', minWidth: 0, flex: 1 }}>
-            <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: isMobileDevice() ? '45px' : '70px', height: isMobileDevice() ? '45px' : '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: isMobileDevice() ? '4px' : '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
-            <div className="brand-text-container" style={{ flex: 1, minWidth: 0 }}>
-              <div className="brand-text-main" style={{ fontSize: isMobileDevice() ? '13px' : '28px', fontWeight: '800', color: '#ffffff', letterSpacing: isMobileDevice() ? '-0.3px' : '-0.5px', margin: '0', lineHeight: '1.1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal' }}> Aplicativo Revisión Energética</div>
-              <div className="brand-text-sub" style={{ fontSize: isMobileDevice() ? '8px' : '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: isMobileDevice() ? '0px' : '0.5px', lineHeight: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
+        <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobileDevice() ? '6px' : '24px', padding: isMobileDevice() ? '8px 10px' : '20px 32px', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobileDevice() ? '4px' : '24px', minWidth: 0, flex: 1 }}>
+            <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: isMobileDevice() ? '40px' : '70px', height: isMobileDevice() ? '40px' : '70px', borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.95)', padding: isMobileDevice() ? '3px' : '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
+            <div className="brand-text-container" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div className="brand-text-main" style={{ fontSize: isMobileDevice() ? '12px' : '28px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.5px', margin: '0', lineHeight: '1', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}> Aplicativo Revisión</div>
+              {!isMobileDevice() && <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.85)', lineHeight: '1'}}> Energética</div>}
+              <div className="brand-text-sub" style={{ fontSize: isMobileDevice() ? '7px' : '12px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: '2px 0 0 0', letterSpacing: isMobileDevice() ? '-0.3px' : '0.3px', lineHeight: '1', textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}> Laboratorio CEAI</div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <button 
               className="hamburger-menu" 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -642,6 +643,30 @@ function Detail({sede, onReload}){
   function renderField(fieldKey){
     const meta = FIELD_META[fieldKey] || {};
     const value = form[fieldKey] ?? '';
+
+    // Renderizado especial para valor_unitario con formato de moneda en tiempo real
+    if(fieldKey === 'valor_unitario'){
+      const numericValue = Number(value) || 0;
+      const formattedValue = formatNumber(numericValue);
+      return (
+        <div className="form-group" key={fieldKey}>
+          <label>{meta.label} (COP)</label>
+          <div style={{position:'relative', display:'flex', alignItems:'center'}}>
+            <input
+              type={meta.type}
+              value={value}
+              placeholder={meta.placeholder || ''}
+              step={meta.step}
+              onChange={e=>updateForm(fieldKey, e.target.value)}
+              style={{paddingRight:'80px'}}
+            />
+            <div style={{position:'absolute', right:'12px', fontSize:'13px', fontWeight:'600', color:'#0B7D4B', pointerEvents:'none', whiteSpace:'nowrap'}}>
+              ${formattedValue}
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     if(fieldKey === 'evidencias'){
       const isMobile = isMobileDevice();
