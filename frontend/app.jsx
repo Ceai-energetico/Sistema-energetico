@@ -269,20 +269,29 @@ function downloadExcel(items = [], fileName = 'inventario.xlsx'){
     return;
   }
   
-  const headers = ['Tipo', 'Regional', 'Centro', 'Sede', 'Descripción', 'Marca', 'Modelo', 'Cantidad', 'Potencia (kW)', 'Consumo (kWh/mes)', 'Ubicación', 'Observaciones'];
+  const headers = ['Tipo', 'Regional', 'Centro', 'Sede', 'Descripción', 'Marca', 'Modelo', 'Clasificación Energética', 'Año Instalación', 'Cantidad', 'Potencia (kW)', 'Horas Uso Diario', 'Días Uso Mes', 'Consumo (kWh/mes)', 'Valor Unitario (COP)', 'Valor Total (COP)', 'Grupo Principal', 'Ubicación', 'Uso', 'Tecnología', 'Observaciones'];
   const rows = items.map(item => [
-    item.hoja_tipo,
+    item.hoja_tipo || '',
     item.regional || '',
     item.centro_formacion || '',
     item.sede_nombre || '',
-    item.descripcion,
-    item.marca,
-    item.modelo,
-    item.cantidad,
-    item.potencia_kw,
-    item.consumo_mensual_kwh,
-    item.ubicacion,
-    item.observaciones
+    item.descripcion || '',
+    item.marca || '',
+    item.modelo || '',
+    item.clasificacion_energetica || '',
+    item.ano_instalacion || '',
+    item.cantidad || '',
+    item.potencia_kw || '',
+    item.horas_uso_diario || '',
+    item.dias_uso_mes || '',
+    item.consumo_mensual_kwh || '',
+    item.valor_unitario || '',
+    (Number(item.cantidad || 0) * Number(item.valor_unitario || 0)).toFixed(0),
+    item.grupo_principal || '',
+    item.ubicacion || '',
+    item.uso || '',
+    item.tecnologia || '',
+    item.observaciones || ''
   ]);
   
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -306,15 +315,15 @@ function Header({ user, onLogout, sedes, selectedId, onSelect, activeView, onVie
   return (
     <>
       <header className="header" style={{ background: 'linear-gradient(135deg, #0B7D4B 0%, #1ab66f 100%)', boxShadow: '0 8px 32px rgba(11, 125, 75, 0.15)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', padding: '20px 32px', width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', minWidth: 0, flex: 1 }}>
-            <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: '70px', height: '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
+        <div className="brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobileDevice() ? '8px' : '24px', padding: isMobileDevice() ? '10px 12px' : '20px 32px', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobileDevice() ? '6px' : '24px', minWidth: 0, flex: 1 }}>
+            <img src="https://i.postimg.cc/cHpqyBX5/Logo-sena.jpg" alt="SENA" className="sena-logo-img" style={{ width: isMobileDevice() ? '45px' : '70px', height: isMobileDevice() ? '45px' : '70px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.95)', padding: isMobileDevice() ? '4px' : '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', flexShrink: 0 }} />
             <div className="brand-text-container" style={{ flex: 1, minWidth: 0 }}>
-              <div className="brand-text-main" style={{ fontSize: '28px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}> Aplicativo Revisión Energética</div>
-              <div className="brand-text-sub" style={{ fontSize: '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: '0.5px' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
+              <div className="brand-text-main" style={{ fontSize: isMobileDevice() ? '13px' : '28px', fontWeight: '800', color: '#ffffff', letterSpacing: isMobileDevice() ? '-0.3px' : '-0.5px', margin: '0', lineHeight: '1.1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal' }}> Aplicativo Revisión Energética</div>
+              <div className="brand-text-sub" style={{ fontSize: isMobileDevice() ? '8px' : '13px', fontWeight: '500', color: 'rgba(255,255,255,0.85)', margin: 0, letterSpacing: isMobileDevice() ? '0px' : '0.5px', lineHeight: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal' }}> Laboratorio de Servicios Tecnológicos CEAI</div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <button 
               className="hamburger-menu" 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1012,7 +1021,7 @@ function Detail({sede, onReload}){
                   </div>
                   <div className="form-group" style={{flex:1}}>
                     <label>Valor Unitario</label>
-                    <div className="view-field">${formatNumber(viewItem.valor_unitario)} COP</div>
+                    <div className="view-field" style={{fontSize:'16px', fontWeight:'600', color:'#0B7D4B'}}>${formatNumber(viewItem.valor_unitario)} COP</div>
                   </div>
                 </div>
 

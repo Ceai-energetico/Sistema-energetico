@@ -22,7 +22,16 @@ DATABASE_URL = os.getenv('DATABASE_URL', f"sqlite:///{os.path.join(BASE_DIR, 'da
 if DATABASE_URL.startswith('sqlite'):
     engine_kwargs = {"connect_args": {"check_same_thread": False}}
 else:
-    engine_kwargs = {}
+    # For PostgreSQL, force IPv4 and add connection options
+    engine_kwargs = {
+        "connect_args": {
+            "client_encoding": "utf8",
+            "connect_timeout": 10,
+        },
+        "pool_pre_ping": True,  # Test connections before using them
+        "pool_size": 5,
+        "max_overflow": 10,
+    }
 
 ENGINE = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=ENGINE)
@@ -206,15 +215,19 @@ class RevisionEnergetica088(Base):
 def init_database():
     """Initialize database tables. Called on startup."""
     try:
+        print(f"📦 Initializing database: {DATABASE_URL[:50]}...")
         Base.metadata.create_all(bind=ENGINE)
+        print("✅ Database tables created successfully")
         
         # Ensure inventory table has the extended schema (SQLite only)
         if DATABASE_URL.startswith('sqlite'):
             ensure_inventario_schema(ENGINE)
             ensure_revision088_schema(ENGINE)
+            print("✅ Schema upgraded")
     except Exception as e:
-        print(f"Warning: Could not initialize database: {e}")
-        # Continue anyway - tables might already exist
+        print(f"⚠️  Database init warning: {str(e)[:200]}")
+        print("   App will continue, but features may be limited")
+        # Continue anyway - tables might already exist or will be created on first request
 
 # Ensure inventory table has the extended schema (add missing columns when upgrading)
 def ensure_inventario_schema(engine):
@@ -411,15 +424,30 @@ def init_demo(session):
 # Startup event to initialize DB and demo data
 @app.on_event('startup')
 def startup_event():
+    print("\n" + "="*60)
+    print("🚀 INICIANDO APLICACIÓN")
+    print("="*60)
+    
     # Initialize database tables first
     init_database()
     
     # Then initialize demo data if needed
-    session = SessionLocal()
     try:
-        init_demo(session)
-    finally:
-        session.close()
+        session = SessionLocal()
+        try:
+            init_demo(session)
+            print("✅ Demo data initialized")
+        except Exception as e:
+            print(f"⚠️  Demo data warning: {str(e)[:100]}")
+        finally:
+            session.close()
+    except Exception as e:
+        print(f"⚠️  Could not access database for demo: {str(e)[:100]}")
+    
+    print("="*60)
+    print("API lista en: http://0.0.0.0:10000")
+    print("Health check: GET /api/health")
+    print("="*60 + "\n")
 
 # Pydantic schemas
 class SedeOut(BaseModel):
